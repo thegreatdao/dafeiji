@@ -1,4 +1,4 @@
-package com.emptyyourmind;
+package com.emptyyourmind.activites;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
@@ -8,6 +8,8 @@ import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolic
 import org.anddev.andengine.entity.IEntity;
 import org.anddev.andengine.entity.modifier.PathModifier;
 import org.anddev.andengine.entity.modifier.PathModifier.Path;
+import org.anddev.andengine.entity.modifier.RotationModifier;
+import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
@@ -22,6 +24,8 @@ import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 
+import com.emptyyourmind.utils.JetStrategyUtil;
+
 /**
  * @author Self-Less
  *
@@ -30,25 +34,27 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
 	private static final int NUM_OF_LAYERS = 2;
-	private static final int CELL_GAP = 60;
+	private static final int CELL_SIDE_LENGTH = 60;
 	private static final int CAMERA_WIDTH = 720;
 	private static final int CAMERA_HEIGHT = 480;
-	private static final int NUM_OF_HORIZONTAL_CELLS = CAMERA_WIDTH / CELL_GAP;
-	private static final int NUM_OF_VERTICAL_CELLS = CAMERA_HEIGHT / CELL_GAP;
+	private static final int NUM_OF_HORIZONTAL_CELLS = CAMERA_WIDTH / CELL_SIDE_LENGTH;
+	private static final int NUM_OF_VERTICAL_CELLS = CAMERA_HEIGHT / CELL_SIDE_LENGTH;
 
 	private Camera camera;
 	private Texture texture;
-	private Texture autoParallaxBackgroundTexture;
+	private Texture autoParallaxBackgroundTexturePlayer;
+	private Texture autoParallaxBackgroundTextureEnemy;
 	private TextureRegion textureRegion;
-	private TextureRegion parallaxLayerBack;
-	private TextureRegion parallaxLayerMiddle;
+	private TextureRegion parallaxLayerBackPlayer;
+	private TextureRegion parallaxLayerMiddlePlayer;
+	private TextureRegion parallaxLayerBackEnemy;
+	private TextureRegion parallaxLayerMiddleEnemy;
 	private Scene scene;
 	private Sprite jet;
 
 	@Override
 	public void onLoadComplete()
 	{
-
 	}
 
 	@Override
@@ -65,46 +71,46 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		TextureRegionFactory.setAssetBasePath("gfx/");
 
 		textureRegion = TextureRegionFactory.createFromAsset(texture, this, "jet.png", 0, 0);
-		autoParallaxBackgroundTexture = new Texture(1024, 1024, TextureOptions.DEFAULT);
+		autoParallaxBackgroundTexturePlayer = new Texture(1024, 1024, TextureOptions.DEFAULT);
+		autoParallaxBackgroundTextureEnemy = new Texture(1024, 1024, TextureOptions.DEFAULT);
 		
-		parallaxLayerBack = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexture, this, "bg.png", 0, 0);
-		parallaxLayerMiddle = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexture, this, "cloud.png", 0, 0);
-		mEngine.getTextureManager().loadTextures(texture, autoParallaxBackgroundTexture);
+		parallaxLayerBackPlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexturePlayer, this, "bg.png", 0, 0);
+		parallaxLayerMiddlePlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexturePlayer, this, "cloud.png", 0, 0);
+		
+		parallaxLayerBackEnemy = parallaxLayerBackPlayer.clone();
+		parallaxLayerMiddleEnemy = parallaxLayerMiddlePlayer.clone();
+		
+		mEngine.getTextureManager().loadTextures(texture, autoParallaxBackgroundTexturePlayer, autoParallaxBackgroundTextureEnemy);
 	}
 
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
-		float x = event.getX();
+		/*float x = event.getX();
 		float y = event.getY();
 		IEntity topLayer = scene.getLastChild();
-		setMissleTarget(x, y, topLayer);
-		final Path path = new Path(3).to(300, 240).to(10, CAMERA_HEIGHT - 240).to(300, 240);
-		jet.registerEntityModifier(new PathModifier(3f, path));
+		setMissleTarget(x, y, topLayer);*/
+		final Path path = new Path(2).to(300, 240).to(0, 0);
+		jet.registerEntityModifier(new SequenceEntityModifier(new RotationModifier(1,0, 45), new PathModifier(3f, path),new RotationModifier(1,45, 0)));
+		
+//		switchToEnemyBackground(scene);
 		return false;
 	}
+
+	@SuppressWarnings("unused")
+	private void switchToEnemyBackground(Scene scene)
+	{
+		final AutoParallaxBackground autoParallaxBackgroundEnemy = new AutoParallaxBackground(0, 0, 0, 10);
+		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackEnemy.getHeight(), parallaxLayerBackEnemy)));
+		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddleEnemy)));
+		scene.setBackground(autoParallaxBackgroundEnemy);
+	}
 	
+	@SuppressWarnings("unused")
 	private void setMissleTarget(float x, float y, IEntity layer)
 	{
-		int targetX = 0;
-		int targetY = 0;
-		for(int i = 0; i < NUM_OF_HORIZONTAL_CELLS; i++)
-		{
-			targetX = i * CELL_GAP;
-			if(targetX <= x && targetX + CELL_GAP > x)
-			{
-				i = NUM_OF_HORIZONTAL_CELLS;
-			}
-		}
-		for(int i = 0; i < NUM_OF_VERTICAL_CELLS; i ++)
-		{
-			targetY = i * CELL_GAP;
-			if(targetY <= y && targetY + CELL_GAP > y)
-			{
-				i = NUM_OF_VERTICAL_CELLS;
-			}
-		}
-		final Rectangle rect = new Rectangle(targetX, targetY, CELL_GAP, CELL_GAP);
+		int[] cellCoordinates = JetStrategyUtil.findTargetCellCoordinates(x, y, NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
+		final Rectangle rect = new Rectangle(cellCoordinates[0], cellCoordinates[1], CELL_SIDE_LENGTH, CELL_SIDE_LENGTH);
 		rect.setColor(0.6f, 0.8f, 0.6f, 0.6f);
 		layer.attachChild(rect);
 	}
@@ -112,12 +118,12 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	@Override
 	public Scene onLoadScene()
 	{
-		final AutoParallaxBackground autoParallaxBackground = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBack.getHeight(), parallaxLayerBack)));
-		autoParallaxBackground.attachParallaxEntity(new ParallaxEntity(5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddle)));
+		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackPlayer.getHeight(), parallaxLayerBackPlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddlePlayer)));
 		
 		scene = new Scene(NUM_OF_LAYERS);
-		scene.setBackground(autoParallaxBackground);
+		scene.setBackground(autoParallaxBackgroundPlayer);
 		scene.setOnSceneTouchListener(this);
 		
 		final IEntity gridLayer = drawSystem(scene);
@@ -129,13 +135,13 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 
 	private IEntity drawSystem(final Scene scene)
 	{
-		final float num_of_vertical_lines = CAMERA_WIDTH / CELL_GAP;
-		final float num_of_horizontal_lines = CAMERA_WIDTH / CELL_GAP;
+		final float num_of_vertical_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
+		final float num_of_horizontal_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		
 		final IEntity gridLayer = scene.getFirstChild();
 		for (int i = 0; i < num_of_vertical_lines; i++)
 		{
-			final float x1 = i * CELL_GAP;
+			final float x1 = i * CELL_SIDE_LENGTH;
 			final float x2 = x1;
 			final float y1 = 0;
 			final float y2 = CAMERA_WIDTH;
@@ -155,7 +161,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		{
 			final float x1 = 0;
 			final float x2 = CAMERA_WIDTH;
-			final float y1 = i * CELL_GAP;
+			final float y1 = i * CELL_SIDE_LENGTH;
 			final float y2 = y1;
 			
 			final Line lineLightTop = new Line(x1, y1-1, x2, y2-1, 1);
