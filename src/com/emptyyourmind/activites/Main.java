@@ -6,10 +6,6 @@ import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.EngineOptions.ScreenOrientation;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.anddev.andengine.entity.IEntity;
-import org.anddev.andengine.entity.modifier.PathModifier;
-import org.anddev.andengine.entity.modifier.PathModifier.Path;
-import org.anddev.andengine.entity.modifier.RotationModifier;
-import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
@@ -24,6 +20,7 @@ import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 
+import com.emptyyourmind.sprites.Jet;
 import com.emptyyourmind.utils.JetStrategyUtil;
 
 /**
@@ -50,7 +47,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private TextureRegion parallaxLayerBackEnemy;
 	private TextureRegion parallaxLayerMiddleEnemy;
 	private Scene scene;
-	private Sprite jet;
+	private Jet jet;
 
 	@Override
 	public void onLoadComplete()
@@ -86,12 +83,11 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
-		/*float x = event.getX();
+		float x = event.getX();
 		float y = event.getY();
-		IEntity topLayer = scene.getLastChild();
+/*		IEntity topLayer = scene.getLastChild();
 		setMissleTarget(x, y, topLayer);*/
-		final Path path = new Path(2).to(300, 240).to(0, 0);
-		jet.registerEntityModifier(new SequenceEntityModifier(new RotationModifier(1,0, 45), new PathModifier(3f, path),new RotationModifier(1,45, 0)));
+		jet.registerEntityModifier(jet.moveTo(x, y));
 		
 //		switchToEnemyBackground(scene);
 		return false;
@@ -127,7 +123,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		scene.setOnSceneTouchListener(this);
 		
 		final IEntity gridLayer = drawSystem(scene);
-		jet = new Sprite(300f, 240f, textureRegion);
+		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH, NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS);
 //		jet.registerEntityModifier(new RotationModifier(6, 0, 360));
 		gridLayer.attachChild(jet);
 		return scene;
