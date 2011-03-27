@@ -6,10 +6,13 @@ import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.EngineOptions.ScreenOrientation;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.anddev.andengine.entity.IEntity;
+import org.anddev.andengine.entity.modifier.IEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
+import org.anddev.andengine.entity.scene.Scene.IOnAreaTouchListener;
 import org.anddev.andengine.entity.scene.Scene.IOnSceneTouchListener;
+import org.anddev.andengine.entity.scene.Scene.ITouchArea;
 import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
 import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxEntity;
 import org.anddev.andengine.entity.sprite.Sprite;
@@ -27,7 +30,7 @@ import com.emptyyourmind.utils.JetStrategyUtil;
  * @author Self-Less
  *
  */
-public class Main extends BaseGameActivity implements IOnSceneTouchListener
+public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOnAreaTouchListener
 {
 
 	private static final int NUM_OF_LAYERS = 2;
@@ -42,12 +45,17 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Texture autoParallaxBackgroundTexturePlayer;
 	private Texture autoParallaxBackgroundTextureEnemy;
 	private TextureRegion textureRegion;
+	private TextureRegion textureRegionPin;
+	private TextureRegion textureRegionCross;
 	private TextureRegion parallaxLayerBackPlayer;
 	private TextureRegion parallaxLayerMiddlePlayer;
 	private TextureRegion parallaxLayerBackEnemy;
 	private TextureRegion parallaxLayerMiddleEnemy;
 	private Scene scene;
 	private Jet jet;
+	private Sprite pin;
+	private Sprite crossFire;
+	private int[] target;
 
 	@Override
 	public void onLoadComplete()
@@ -68,6 +76,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		TextureRegionFactory.setAssetBasePath("gfx/");
 
 		textureRegion = TextureRegionFactory.createFromAsset(texture, this, "jet.png", 0, 0);
+		textureRegionCross = TextureRegionFactory.createFromAsset(texture, this, "cross.png", 301, 0);
+		textureRegionPin = TextureRegionFactory.createFromAsset(texture, this, "pin.png", 361, 0);
 		autoParallaxBackgroundTexturePlayer = new Texture(1024, 1024, TextureOptions.DEFAULT);
 		autoParallaxBackgroundTextureEnemy = new Texture(1024, 1024, TextureOptions.DEFAULT);
 		
@@ -83,16 +93,55 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
-		float x = event.getX();
-		float y = event.getY();
-/*		IEntity topLayer = scene.getLastChild();
-		setMissleTarget(x, y, topLayer);*/
-		jet.registerEntityModifier(jet.moveTo(x, y));
-		
-//		switchToEnemyBackground(scene);
+		target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
+		if(!isAnyControlsInTheArea())
+		{
+			pin.setPosition(target[0] - CELL_SIDE_LENGTH, target[1]);
+			crossFire.setPosition(target[0] + CELL_SIDE_LENGTH, target[1]);
+	/*		IEntity topLayer = scene.getLastChild();
+			setMissleTarget(x, y, topLayer);*/
+	//		switchToEnemyBackground(scene);
+		}
 		return false;
 	}
 
+	private boolean isAnyControlsInTheArea()
+	{
+		if(target[0] == pin.getX() && target[1] == pin.getY())
+		{
+			return true;
+		}
+		else if (target[0] == crossFire.getX() && target[1] == crossFire.getY())
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	private void moveJet()
+	{
+		IEntityModifier moveToModifier = jet.moveTo(target);
+		if(moveToModifier != null)
+		{
+			jet.registerEntityModifier(moveToModifier);
+		}
+	}
+
+	@Override
+	public boolean onAreaTouched(TouchEvent event, ITouchArea touchArea, float x, float y)
+	{
+		if(event.getAction() == TouchEvent.ACTION_DOWN)
+		{
+			moveJet();
+			pin.setPosition(Integer.MAX_VALUE, Integer.MAX_VALUE);
+			crossFire.setPosition(Integer.MAX_VALUE, Integer.MAX_VALUE);
+		}
+		return false;
+	}
+	
 	@SuppressWarnings("unused")
 	private void switchToEnemyBackground(Scene scene)
 	{
@@ -122,10 +171,18 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		scene.setBackground(autoParallaxBackgroundPlayer);
 		scene.setOnSceneTouchListener(this);
 		
-		final IEntity gridLayer = drawSystem(scene);
-		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH, NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS);
-//		jet.registerEntityModifier(new RotationModifier(6, 0, 360));
-		gridLayer.attachChild(jet);
+		drawSystem(scene);
+		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		pin = new Sprite(0, 0, textureRegionPin);
+		crossFire = new Sprite(120, 0, textureRegionCross);
+		IEntity lastChild = scene.getLastChild();
+		lastChild.attachChild(pin);
+		lastChild.attachChild(crossFire);
+		scene.registerTouchArea(pin);
+		scene.registerTouchArea(crossFire);
+		scene.getFirstChild().attachChild(jet);
+		scene.setOnAreaTouchListener(this);
+		
 		return scene;
 	}
 

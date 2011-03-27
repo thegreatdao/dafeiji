@@ -18,19 +18,17 @@ public class Jet extends Sprite
 	public static final int[] JET54_REFERENCE_POINT_LEFT = new int[]{3, 2};
 	public static final int[] JET54_REFERENCE_POINT_DOWN = new int[]{2, 3};
 	public static final int[] JET54_REFERENCE_POINT_RIGHT = new int[]{0, 2};
+	public static final float ROTATION_TIME_UNIT = 0.25f;
+	public static final float MOVE_TIME_UNIT = 0.25f;
 	
 	private int[] indexes;
 	private int cellSideLength;
-	private int numOfHorCells;
-	private int numOfVerCells;
 
-	public Jet(float pX, float pY, TextureRegion textureRegion, int[] indexes, int cellSideLength, int numOfHorCells, int numOfVerCells)
+	public Jet(float pX, float pY, TextureRegion textureRegion, int[] indexes, int cellSideLength)
 	{
 		super(pX, pY, textureRegion);		
 		this.indexes = indexes;
 		this.cellSideLength = cellSideLength;
-		this.numOfHorCells = numOfHorCells;
-		this.numOfVerCells = numOfVerCells;
 		if(indexes == null)
 		{
 			throw new RuntimeException("error creating " + Jet.class.getName() + " You will have to specify the reference point");
@@ -47,38 +45,26 @@ public class Jet extends Sprite
 		return indexes;
 	}
 	
-	public IEntityModifier moveTo(float x, float y)
+	public IEntityModifier moveTo(int[] target)
 	{
-		int[] target = findTargetCellCoordinates(x, y, numOfHorCells, numOfVerCells, cellSideLength);
-		int[] head = getHeadCoordinates();
-		int b = Math.abs(target[0] - head[0]);
-		int a = Math.abs(target[1] - head[1]);
-		double degree = Math.toDegrees(Math.atan(b / (double)a));
-		final Path path = new Path(2).to(300, 240).to(0, 0);
-		return new SequenceEntityModifier(new RotationModifier(1,0, (float) -degree), new PathModifier(3f, path),new RotationModifier(1,(float) -degree, 0));
+		final int[] head = getHeadCoordinates();
+		if(target[0] == head[0] && target[1] == head[1])
+		{
+			return null;
+		}
+		else
+		{
+			return constructModifiers(target, head);
+		}
 	}
-	
-	private int[] findTargetCellCoordinates(float clickedX, float clickedY, int numOfHorCells, int numOfVerCells, int cellSideLength)
+
+	private IEntityModifier constructModifiers(int[] target, int[] head)
 	{
-		int targetX = 0;
-		int targetY = 0;
-		for(int i = 0; i < numOfHorCells; i++)
-		{
-			targetX = i * cellSideLength;
-			if(targetX <= clickedX && targetX + cellSideLength > clickedX)
-			{
-				i = numOfHorCells;
-			}
-		}
-		for(int i = 0; i < numOfVerCells; i ++)
-		{
-			targetY = i * cellSideLength;
-			if(targetY <= clickedY && targetY + cellSideLength > clickedY)
-			{
-				i = numOfVerCells;
-			}
-		}
-		return new int[]{targetX, targetY};
+		final int b = target[0] - head[0];
+		final int a = target[1] - head[1];
+		double degree = Math.toDegrees(Math.atan(b / (double)a));
+		final Path path = new Path(2).to(getX(), getY()).to(target[0] - cellSideLength * 2, target[1]);
+		return new SequenceEntityModifier(new RotationModifier(1,0, (float)-degree), new PathModifier(3f, path),new RotationModifier(1,(float)-degree, 0));
 	}
 	
 	public int[] getHeadCoordinates()
