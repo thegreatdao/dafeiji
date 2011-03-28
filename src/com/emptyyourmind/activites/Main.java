@@ -10,9 +10,7 @@ import org.anddev.andengine.entity.modifier.IEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
-import org.anddev.andengine.entity.scene.Scene.IOnAreaTouchListener;
 import org.anddev.andengine.entity.scene.Scene.IOnSceneTouchListener;
-import org.anddev.andengine.entity.scene.Scene.ITouchArea;
 import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
 import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxEntity;
 import org.anddev.andengine.entity.sprite.Sprite;
@@ -30,10 +28,10 @@ import com.emptyyourmind.utils.JetStrategyUtil;
  * @author Self-Less
  *
  */
-public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOnAreaTouchListener
+public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
-	private static final int NUM_OF_LAYERS = 2;
+	private static final int NUM_OF_LAYERS = 1;
 	private static final int CELL_SIDE_LENGTH = 60;
 	private static final int CAMERA_WIDTH = 720;
 	private static final int CAMERA_HEIGHT = 480;
@@ -55,6 +53,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOn
 	private Jet jet;
 	private Sprite pin;
 	private Sprite crossFire;
+	private static final int INIT_XY_SPRITE = -600;
 	private int[] target;
 
 	@Override
@@ -93,14 +92,20 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOn
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
+		int[] clickedTarget = target;
 		target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
 		if(!isAnyControlsInTheArea())
 		{
 			pin.setPosition(target[0] - CELL_SIDE_LENGTH, target[1]);
 			crossFire.setPosition(target[0] + CELL_SIDE_LENGTH, target[1]);
-	/*		IEntity topLayer = scene.getLastChild();
-			setMissleTarget(x, y, topLayer);*/
-	//		switchToEnemyBackground(scene);
+			pin.setVisible(true);
+			crossFire.setVisible(true);
+		}
+		else
+		{
+			moveJet(clickedTarget);
+			pin.setVisible(false);
+			crossFire.setVisible(false);
 		}
 		return false;
 	}
@@ -121,7 +126,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOn
 		}
 	}
 
-	private void moveJet()
+	private void moveJet(int[] target)
 	{
 		IEntityModifier moveToModifier = jet.moveTo(target);
 		if(moveToModifier != null)
@@ -131,17 +136,29 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOn
 	}
 
 	@Override
-	public boolean onAreaTouched(TouchEvent event, ITouchArea touchArea, float x, float y)
+	public Scene onLoadScene()
 	{
-		if(event.getAction() == TouchEvent.ACTION_DOWN)
-		{
-			moveJet();
-			pin.setPosition(Integer.MAX_VALUE, Integer.MAX_VALUE);
-			crossFire.setPosition(Integer.MAX_VALUE, Integer.MAX_VALUE);
-		}
-		return false;
+		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackPlayer.getHeight(), parallaxLayerBackPlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddlePlayer)));
+		
+		scene = new Scene(NUM_OF_LAYERS);
+		scene.setBackground(autoParallaxBackgroundPlayer);
+		scene.setOnSceneTouchListener(this);
+		
+		drawSystem(scene);
+		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		pin = new Sprite(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionPin);
+		crossFire = new Sprite(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionCross);
+		scene.setOnSceneTouchListener(this);
+		scene.registerTouchArea(pin);
+		scene.registerTouchArea(crossFire);
+		scene.getLastChild().attachChild(jet);
+		scene.getLastChild().attachChild(pin);
+		scene.getLastChild().attachChild(crossFire);
+		return scene;
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void switchToEnemyBackground(Scene scene)
 	{
@@ -159,33 +176,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener, IOn
 		rect.setColor(0.6f, 0.8f, 0.6f, 0.6f);
 		layer.attachChild(rect);
 	}
-
-	@Override
-	public Scene onLoadScene()
-	{
-		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackPlayer.getHeight(), parallaxLayerBackPlayer)));
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddlePlayer)));
-		
-		scene = new Scene(NUM_OF_LAYERS);
-		scene.setBackground(autoParallaxBackgroundPlayer);
-		scene.setOnSceneTouchListener(this);
-		
-		drawSystem(scene);
-		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
-		pin = new Sprite(0, 0, textureRegionPin);
-		crossFire = new Sprite(120, 0, textureRegionCross);
-		IEntity lastChild = scene.getLastChild();
-		lastChild.attachChild(pin);
-		lastChild.attachChild(crossFire);
-		scene.registerTouchArea(pin);
-		scene.registerTouchArea(crossFire);
-		scene.getFirstChild().attachChild(jet);
-		scene.setOnAreaTouchListener(this);
-		
-		return scene;
-	}
-
+	
 	private IEntity drawSystem(final Scene scene)
 	{
 		final float num_of_vertical_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
