@@ -7,6 +7,7 @@ import org.anddev.andengine.entity.modifier.RotationModifier;
 import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
+import org.anddev.andengine.util.MathUtils;
 
 /**
  * @author Self-Less
@@ -60,9 +61,9 @@ public class Jet extends Sprite
 
 	private IEntityModifier constructModifiers(int[] target, int[] head)
 	{
-		final int b = target[0] - head[0];
-		final int a = target[1] - head[1];
-		double degree = Math.toDegrees(Math.atan(b / (double)a));
+		final int b = -target[0] + head[0];
+		final int a = -target[1] + head[1];
+		double degree = MathUtils.radToDeg((float)Math.atan2((double)b, (double)a));
 		final Path path = new Path(2).to(getX(), getY()).to(target[0] - cellSideLength * 2, target[1]);
 		return new SequenceEntityModifier(new RotationModifier(1,0, (float)-degree), new PathModifier(3f, path),new RotationModifier(1,(float)-degree, 0));
 	}

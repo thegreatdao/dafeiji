@@ -1,7 +1,14 @@
 package com.emptyyourmind.utils;
 
+import java.util.List;
+
+import com.emptyyourmind.sprites.ControlIcon;
+
 public class JetStrategyUtil
 {
+	public static final String ICON_MOVE = "move";
+	public static final String ICON_ROTATE = "rotate";
+	
 	public static int[] findTargetCellCoordinates(float clickedX, float clickedY, int numOfHorCells, int numOfVerCells, int cellSideLength)
 	{
 		int targetX = 0;
@@ -30,4 +37,20 @@ public class JetStrategyUtil
 		
 		return null;
 	}
+	
+	public static ControlIcon getControlIcon(float clickedX, float clickedY, int numOfHorCells, int numOfVerCells, int cellSideLength, List<ControlIcon> controlIcons)
+	{
+		int[] targetCellCoordinates = findTargetCellCoordinates(clickedX, clickedY, numOfHorCells, numOfVerCells, cellSideLength);
+		int size = controlIcons.size();
+		for(int i=0; i<size; i++)
+		{
+			ControlIcon controlIcon = controlIcons.get(i);
+			if(controlIcon.getX() == targetCellCoordinates[0] && controlIcon.getY() == targetCellCoordinates[1])
+			{
+				return controlIcon;
+			}
+		}
+		return null;
+	}
+	
 }
