@@ -46,12 +46,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Texture texture;
 	private Texture autoParallaxBackgroundTexturePlayer;
 	private Texture autoParallaxBackgroundTextureEnemy;
+	private Texture autoParallaxBackgroundTextureFront;
 	private TextureRegion textureRegion;
 	private TextureRegion textureRegionClone;
 	private TextureRegion textureRegionPin;
 	private TextureRegion textureRegionCross;
 	private TextureRegion parallaxLayerBackPlayer;
 	private TextureRegion parallaxLayerMiddlePlayer;
+	private TextureRegion parallaxLayerFrontPlayer;
 	private TextureRegion parallaxLayerBackEnemy;
 	private TextureRegion parallaxLayerMiddleEnemy;
 	private Scene scene;
@@ -62,7 +64,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private ControlIcon crossFire;
 	private static final int INIT_XY_SPRITE = -600;
 	private int[] target;
-
+	private int  rotationCount;	
+	
 	@Override
 	public void onLoadComplete()
 	{
@@ -87,41 +90,55 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionPin = TextureRegionFactory.createFromAsset(texture, this, "pin.png", 361, 0);
 		autoParallaxBackgroundTexturePlayer = new Texture(1024, 1024, TextureOptions.DEFAULT);
 		autoParallaxBackgroundTextureEnemy = new Texture(1024, 1024, TextureOptions.DEFAULT);
+		autoParallaxBackgroundTextureFront = new Texture(512, 128, TextureOptions.DEFAULT);
 		
 		parallaxLayerBackPlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexturePlayer, this, "bg.png", 0, 0);
 		parallaxLayerMiddlePlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexturePlayer, this, "cloud.png", 0, 0);
+		parallaxLayerFrontPlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTextureFront, this, "cloud2.png", 0, 0);
 		
 		parallaxLayerBackEnemy = parallaxLayerBackPlayer.clone();
 		parallaxLayerMiddleEnemy = parallaxLayerMiddlePlayer.clone();
 		
-		mEngine.getTextureManager().loadTextures(texture, autoParallaxBackgroundTexturePlayer, autoParallaxBackgroundTextureEnemy);
+		mEngine.getTextureManager().loadTextures(texture, autoParallaxBackgroundTexturePlayer, autoParallaxBackgroundTextureEnemy, autoParallaxBackgroundTextureFront);
 	}
 
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
-		int[] clickedTarget = target;
-		target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
 		ControlIcon controlIcon = JetStrategyUtil.getControlIcon(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH, controlIcons);
 		if(controlIcon == null)
 		{
-			pin.setPosition(target[0] - CELL_SIDE_LENGTH, target[1]);
-			crossFire.setPosition(target[0] + CELL_SIDE_LENGTH, target[1]);
-			jetClone.setPosition(target[0]-2*CELL_SIDE_LENGTH, target[1]);
+			target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
+			showControlIcons();
 		}
 		else
 		{
 			if(controlIcon.getName().equals(JetStrategyUtil.ICON_MOVE))
 			{
-				moveJet(clickedTarget);
-				resetIconsAndReference();
+				moveJet(target);
 			}
 			else
 			{
-				jetClone.setRotation(90);
+				rotateJetClone();
 			}
 		}
 		return false;
+	}
+
+	private void showControlIcons()
+	{
+		resetIconsAndReference();
+		pin.setPosition(target[0] - CELL_SIDE_LENGTH, target[1]);
+		crossFire.setPosition(target[0] + CELL_SIDE_LENGTH, target[1]);
+		jetClone.setPosition(target[0]-2*CELL_SIDE_LENGTH, target[1]);
+	}
+
+	private void rotateJetClone()
+	{
+		rotationCount++;
+		int pRotation = 90 * (rotationCount % 4);
+		jetClone.setRotation(pRotation);
+		jetClone.setRotationCenter(jetClone.getWidth()/2, CELL_SIDE_LENGTH/2);
 	}
 
 	private void resetIconsAndReference()
@@ -129,6 +146,9 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		pin.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		crossFire.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
+		jetClone.reset();
+		jetClone.setAlpha(0.5f);
+		rotationCount = 0;
 	}
 
 	private void moveJet(int[] target)
@@ -138,6 +158,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		{
 			jet.registerEntityModifier(moveToModifier);
 		}
+		resetIconsAndReference();
 	}
 
 	@Override
@@ -145,13 +166,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	{
 		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
 		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackPlayer.getHeight(), parallaxLayerBackPlayer)));
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddlePlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(3.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddlePlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(1.0f, new Sprite(0,  CAMERA_HEIGHT / 4, parallaxLayerFrontPlayer)));
 		
 		scene = new Scene(NUM_OF_LAYERS);
 		scene.setBackground(autoParallaxBackgroundPlayer);
 		scene.setOnSceneTouchListener(this);
 		
-		drawSystem(scene);
+		drawGrid(scene);
 		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jetClone = new Jet(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jetClone.setAlpha(0.5f);
@@ -187,7 +209,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		layer.attachChild(rect);
 	}
 	
-	private IEntity drawSystem(final Scene scene)
+	private IEntity drawGrid(final Scene scene)
 	{
 		final float num_of_vertical_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		final float num_of_horizontal_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;

@@ -27,7 +27,7 @@ public class Jet extends Sprite
 
 	public Jet(float pX, float pY, TextureRegion textureRegion, int[] indexes, int cellSideLength)
 	{
-		super(pX, pY, textureRegion);		
+		super(pX, pY, textureRegion);
 		this.indexes = indexes;
 		this.cellSideLength = cellSideLength;
 		if(indexes == null)
