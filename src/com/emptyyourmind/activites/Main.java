@@ -9,7 +9,6 @@ import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.EngineOptions.ScreenOrientation;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.anddev.andengine.entity.IEntity;
-import org.anddev.andengine.entity.modifier.IEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
@@ -24,6 +23,7 @@ import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 
+import com.emptyyourmind.enums.Direction;
 import com.emptyyourmind.sprites.ControlIcon;
 import com.emptyyourmind.sprites.Jet;
 import com.emptyyourmind.utils.JetStrategyUtil;
@@ -35,6 +35,7 @@ import com.emptyyourmind.utils.JetStrategyUtil;
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
+	private static final float JET_CLONE_ALPHA = 0.3f;
 	private static final int NUM_OF_LAYERS = 1;
 	private static final int CELL_SIDE_LENGTH = 60;
 	private static final int CAMERA_WIDTH = 720;
@@ -64,7 +65,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private ControlIcon crossFire;
 	private static final int INIT_XY_SPRITE = -600;
 	private int[] target;
-	private int  rotationCount;	
+	private int rotationCount;
+	private Direction currentDirection = Direction.UP;
 	
 	@Override
 	public void onLoadComplete()
@@ -135,10 +137,11 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 
 	private void rotateJetClone()
 	{
-		rotationCount++;
-		int pRotation = 90 * (rotationCount % 4);
-		jetClone.setRotation(pRotation);
+		rotationCount = ++rotationCount % 4;
+		this.currentDirection = Direction.values()[rotationCount];
+		int pRotation = 90 * rotationCount;
 		jetClone.setRotationCenter(jetClone.getWidth()/2, CELL_SIDE_LENGTH/2);
+		jetClone.setRotation(pRotation);
 	}
 
 	private void resetIconsAndReference()
@@ -147,17 +150,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		crossFire.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.reset();
-		jetClone.setAlpha(0.5f);
+		jetClone.setAlpha(JET_CLONE_ALPHA);
 		rotationCount = 0;
+		currentDirection = Direction.UP;
 	}
 
 	private void moveJet(int[] target)
 	{
-		IEntityModifier moveToModifier = jet.moveTo(target);
-		if(moveToModifier != null)
-		{
-			jet.registerEntityModifier(moveToModifier);
-		}
+		jet.move(target, currentDirection);
 		resetIconsAndReference();
 	}
 
@@ -176,7 +176,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		drawGrid(scene);
 		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jetClone = new Jet(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
-		jetClone.setAlpha(0.5f);
+		jetClone.setAlpha(JET_CLONE_ALPHA);
 		pin = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionPin, JetStrategyUtil.ICON_MOVE);
 		crossFire = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionCross, JetStrategyUtil.ICON_ROTATE);
 		controlIcons.add(pin);
