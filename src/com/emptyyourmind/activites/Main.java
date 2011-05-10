@@ -9,6 +9,11 @@ import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.EngineOptions.ScreenOrientation;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.anddev.andengine.entity.IEntity;
+import org.anddev.andengine.entity.modifier.AlphaModifier;
+import org.anddev.andengine.entity.modifier.LoopEntityModifier;
+import org.anddev.andengine.entity.modifier.ParallelEntityModifier;
+import org.anddev.andengine.entity.modifier.ScaleModifier;
+import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
@@ -21,6 +26,7 @@ import org.anddev.andengine.opengl.texture.Texture;
 import org.anddev.andengine.opengl.texture.TextureOptions;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
+import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 
 import com.emptyyourmind.enums.Direction;
@@ -35,7 +41,11 @@ import com.emptyyourmind.utils.JetStrategyUtil;
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
-	private static final float JET_CLONE_ALPHA = 0.3f;
+	private static final String JET = "jet.png";
+	private static final String PIN_ICON = "pin.png";
+	private static final String CROSS_ICON = "cross.png";
+	private static final float CLONE_ALPHA = 0.6f;
+	private static final float CLONE_END_ALPHA = 0.4f;
 	private static final int NUM_OF_LAYERS = 1;
 	private static final int CELL_SIDE_LENGTH = 60;
 	private static final int CAMERA_WIDTH = 720;
@@ -48,8 +58,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Texture autoParallaxBackgroundTexturePlayer;
 	private Texture autoParallaxBackgroundTextureEnemy;
 	private Texture autoParallaxBackgroundTextureFront;
-	private TextureRegion textureRegion;
-	private TextureRegion textureRegionClone;
+	private TiledTextureRegion textureRegion;
+	private TiledTextureRegion textureRegionClone;
 	private TextureRegion textureRegionPin;
 	private TextureRegion textureRegionCross;
 	private TextureRegion parallaxLayerBackPlayer;
@@ -65,8 +75,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private ControlIcon crossFire;
 	private static final int INIT_XY_SPRITE = -600;
 	private int[] target;
-	private int rotationCount;
-	private Direction currentDirection = Direction.UP;
+	private int  rotationCount;	
+	private Direction direction = Direction.UP;
 	
 	@Override
 	public void onLoadComplete()
@@ -83,13 +93,13 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	@Override
 	public void onLoadResources()
 	{
-		texture = new Texture(512, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		texture = new Texture(2048, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		TextureRegionFactory.setAssetBasePath("gfx/");
 
-		textureRegion = TextureRegionFactory.createFromAsset(texture, this, "jet.png", 0, 0);
+		textureRegion = TextureRegionFactory.createTiledFromAsset(texture, this, JET, 0, 0, 4, 1);
 		textureRegionClone = textureRegion.clone();
-		textureRegionCross = TextureRegionFactory.createFromAsset(texture, this, "cross.png", 301, 0);
-		textureRegionPin = TextureRegionFactory.createFromAsset(texture, this, "pin.png", 361, 0);
+		textureRegionCross = TextureRegionFactory.createFromAsset(texture, this, CROSS_ICON, 1201, 0);
+		textureRegionPin = TextureRegionFactory.createFromAsset(texture, this, PIN_ICON, 1261, 0);
 		autoParallaxBackgroundTexturePlayer = new Texture(1024, 1024, TextureOptions.DEFAULT);
 		autoParallaxBackgroundTextureEnemy = new Texture(1024, 1024, TextureOptions.DEFAULT);
 		autoParallaxBackgroundTextureFront = new Texture(512, 128, TextureOptions.DEFAULT);
@@ -138,10 +148,10 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private void rotateJetClone()
 	{
 		rotationCount = ++rotationCount % 4;
-		this.currentDirection = Direction.values()[rotationCount];
-		int pRotation = 90 * rotationCount;
+		int rotation = 90 * rotationCount;
+		direction = Direction.values()[rotationCount];
+		jetClone.setRotation(rotation);
 		jetClone.setRotationCenter(jetClone.getWidth()/2, CELL_SIDE_LENGTH/2);
-		jetClone.setRotation(pRotation);
 	}
 
 	private void resetIconsAndReference()
@@ -150,14 +160,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		crossFire.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.reset();
-		jetClone.setAlpha(JET_CLONE_ALPHA);
+		jetClone.setAlpha(CLONE_ALPHA);
 		rotationCount = 0;
-		currentDirection = Direction.UP;
+		direction = Direction.UP;
 	}
 
 	private void moveJet(int[] target)
 	{
-		jet.move(target, currentDirection);
+		jet.moveTo(target, direction);
 		resetIconsAndReference();
 	}
 
@@ -175,8 +185,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		
 		drawGrid(scene);
 		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		jet.animate(200L);
 		jetClone = new Jet(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
-		jetClone.setAlpha(JET_CLONE_ALPHA);
+		jetClone.setAlpha(CLONE_ALPHA);
+		jetClone.animate(300L);
+		ParallelEntityModifier parallelEntityModifier = new ParallelEntityModifier(new AlphaModifier(1f, CLONE_ALPHA, CLONE_END_ALPHA), new ScaleModifier(1f, 1, 0.6f));
+		ParallelEntityModifier parallelEntityModifier2 = new ParallelEntityModifier(new AlphaModifier(1f, CLONE_END_ALPHA, CLONE_ALPHA), new ScaleModifier(1f, 0.6f, 1));
+		SequenceEntityModifier sequenceEntityModifier = new SequenceEntityModifier(parallelEntityModifier, parallelEntityModifier2);
+		jetClone.registerEntityModifier(new LoopEntityModifier(sequenceEntityModifier));
 		pin = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionPin, JetStrategyUtil.ICON_MOVE);
 		crossFire = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionCross, JetStrategyUtil.ICON_ROTATE);
 		controlIcons.add(pin);
@@ -185,9 +201,9 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		scene.registerTouchArea(pin);
 		scene.registerTouchArea(crossFire);
 		scene.getLastChild().attachChild(jet);
+		scene.getLastChild().attachChild(jetClone);
 		scene.getLastChild().attachChild(pin);
 		scene.getLastChild().attachChild(crossFire);
-		scene.getLastChild().attachChild(jetClone);
 		return scene;
 	}
 
