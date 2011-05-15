@@ -2,6 +2,7 @@ package com.emptyyourmind.activites;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
@@ -20,6 +21,7 @@ import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.Scene.IOnSceneTouchListener;
 import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
 import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxEntity;
+import org.anddev.andengine.entity.sprite.AnimatedSprite;
 import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.opengl.texture.Texture;
@@ -41,7 +43,15 @@ import com.emptyyourmind.utils.JetStrategyUtil;
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
+	private static final long SECOND_PER_FRAME_FLAME = 150L;
 	private static final String JET = "jet.png";
+	private static final String FLAME_RED = "flame_red.png";
+	private static final String FLAME_BLUE = "flame_blue.png";
+	private static final String FLAME_PURPLE = "flame_purple.png";
+	private static final String[] FLAMES = new String[]{FLAME_RED, FLAME_BLUE, FLAME_PURPLE};
+	private static final String BG_TORONTO = "toronto.png";
+	private static final String BG_TOKYO = "tokyo.png";
+	private static final String[] BG = new String[]{BG_TORONTO, BG_TOKYO};
 	private static final String PIN_ICON = "pin.png";
 	private static final String CROSS_ICON = "cross.png";
 	private static final float CLONE_ALPHA = 0.6f;
@@ -54,19 +64,21 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private static final int NUM_OF_VERTICAL_CELLS = CAMERA_HEIGHT / CELL_SIDE_LENGTH;
 
 	private Camera camera;
-	private Texture texture;
-	private Texture autoParallaxBackgroundTexturePlayer;
-	private Texture autoParallaxBackgroundTextureEnemy;
-	private Texture autoParallaxBackgroundTextureFront;
-	private TiledTextureRegion textureRegion;
-	private TiledTextureRegion textureRegionClone;
+	private Texture textureMain;
+	private Texture textureAutoParallaxBackgroundSmallCloud;
+	private Texture textureAutoParallaxBackground;
+	private Texture textureAutoParallaxBackgroundBigCloud;
+	private Texture textureFlame;
+	private TextureRegion textureRegionJet;
+	private TextureRegion textureRegionJetClone;
 	private TextureRegion textureRegionPin;
 	private TextureRegion textureRegionCross;
-	private TextureRegion parallaxLayerBackPlayer;
-	private TextureRegion parallaxLayerMiddlePlayer;
-	private TextureRegion parallaxLayerFrontPlayer;
-	private TextureRegion parallaxLayerBackEnemy;
-	private TextureRegion parallaxLayerMiddleEnemy;
+	private TextureRegion textureRegionParallaxLayerBackPlayer;
+	private TextureRegion textureRegionParallaxLayerMiddlePlayer;
+	private TextureRegion textureRegionParallaxLayerFrontPlayer;
+	private TextureRegion textureRegionParallaxLayerBackEnemy;
+	private TextureRegion textureRegsionParallaxLayerMiddleEnemy;
+	private TiledTextureRegion textureRegionFlame;
 	private Scene scene;
 	private Jet jet;
 	private Jet jetClone;
@@ -93,25 +105,28 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	@Override
 	public void onLoadResources()
 	{
-		texture = new Texture(2048, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		TextureRegionFactory.setAssetBasePath("gfx/");
 
-		textureRegion = TextureRegionFactory.createTiledFromAsset(texture, this, JET, 0, 0, 4, 1);
-		textureRegionClone = textureRegion.clone();
-		textureRegionCross = TextureRegionFactory.createFromAsset(texture, this, CROSS_ICON, 1201, 0);
-		textureRegionPin = TextureRegionFactory.createFromAsset(texture, this, PIN_ICON, 1261, 0);
-		autoParallaxBackgroundTexturePlayer = new Texture(1024, 1024, TextureOptions.DEFAULT);
-		autoParallaxBackgroundTextureEnemy = new Texture(1024, 1024, TextureOptions.DEFAULT);
-		autoParallaxBackgroundTextureFront = new Texture(512, 128, TextureOptions.DEFAULT);
+		textureMain = new Texture(512, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureFlame = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureRegionFlame = TextureRegionFactory.createTiledFromAsset(textureFlame, this, FLAMES[new Random().nextInt(3)], 0, 0, 4, 1);
+		textureRegionJet = TextureRegionFactory.createFromAsset(textureMain, this, JET, 0, 0);
+		textureRegionJetClone = textureRegionJet.clone();
+		textureRegionCross = TextureRegionFactory.createFromAsset(textureMain, this, CROSS_ICON, 301, 0);
+		textureRegionPin = TextureRegionFactory.createFromAsset(textureMain, this, PIN_ICON, 361, 0);
+		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
+		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
+		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
 		
-		parallaxLayerBackPlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexturePlayer, this, "bg.png", 0, 0);
-		parallaxLayerMiddlePlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTexturePlayer, this, "cloud.png", 0, 0);
-		parallaxLayerFrontPlayer = TextureRegionFactory.createFromAsset(autoParallaxBackgroundTextureFront, this, "cloud2.png", 0, 0);
+		textureRegionParallaxLayerBackPlayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackground, this, BG[new Random().nextInt(2)], 0, 0);
+		textureRegionParallaxLayerMiddlePlayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackgroundSmallCloud, this, "cloud.png", 0, 0);
+		textureRegionParallaxLayerFrontPlayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackgroundBigCloud, this, "cloud2.png", 0, 0);
 		
-		parallaxLayerBackEnemy = parallaxLayerBackPlayer.clone();
-		parallaxLayerMiddleEnemy = parallaxLayerMiddlePlayer.clone();
+		textureRegionParallaxLayerBackEnemy = textureRegionParallaxLayerBackPlayer.clone();
+		textureRegsionParallaxLayerMiddleEnemy = textureRegionParallaxLayerMiddlePlayer.clone();
 		
-		mEngine.getTextureManager().loadTextures(texture, autoParallaxBackgroundTexturePlayer, autoParallaxBackgroundTextureEnemy, autoParallaxBackgroundTextureFront);
+		mEngine.getTextureManager().loadTextures(textureMain, textureAutoParallaxBackgroundSmallCloud, 
+				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, textureFlame);
 	}
 
 	@Override
@@ -175,44 +190,54 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	public Scene onLoadScene()
 	{
 		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackPlayer.getHeight(), parallaxLayerBackPlayer)));
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(3.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddlePlayer)));
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(1.0f, new Sprite(0,  CAMERA_HEIGHT / 4, parallaxLayerFrontPlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - textureRegionParallaxLayerBackPlayer.getHeight(), textureRegionParallaxLayerBackPlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(3.0f, new Sprite(0,  CAMERA_HEIGHT / 2, textureRegionParallaxLayerMiddlePlayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(1.0f, new Sprite(0,  CAMERA_HEIGHT / 4, textureRegionParallaxLayerFrontPlayer)));
 		
 		scene = new Scene(NUM_OF_LAYERS);
 		scene.setBackground(autoParallaxBackgroundPlayer);
 		scene.setOnSceneTouchListener(this);
 		
 		drawGrid(scene);
-		jet = new Jet(300f, 240f, textureRegion, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
-		jet.animate(200L);
-		jetClone = new Jet(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
-		jetClone.setAlpha(CLONE_ALPHA);
-		jetClone.animate(300L);
-		ParallelEntityModifier parallelEntityModifier = new ParallelEntityModifier(new AlphaModifier(1f, CLONE_ALPHA, CLONE_END_ALPHA), new ScaleModifier(1f, 1, 0.6f));
-		ParallelEntityModifier parallelEntityModifier2 = new ParallelEntityModifier(new AlphaModifier(1f, CLONE_END_ALPHA, CLONE_ALPHA), new ScaleModifier(1f, 0.6f, 1));
-		SequenceEntityModifier sequenceEntityModifier = new SequenceEntityModifier(parallelEntityModifier, parallelEntityModifier2);
-		jetClone.registerEntityModifier(new LoopEntityModifier(sequenceEntityModifier));
+		jet = new Jet(0, 0, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		jet.attachChild(new AnimatedSprite(120, 231, textureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
+		createJetClone();
+		createControl();
+		scene.setOnSceneTouchListener(this);
+		IEntity topChild = scene.getLastChild();
+		topChild.attachChild(jet);
+		topChild.attachChild(jetClone);
+		topChild.attachChild(pin);
+		topChild.attachChild(crossFire);
+		return scene;
+	}
+
+	private void createControl()
+	{
 		pin = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionPin, JetStrategyUtil.ICON_MOVE);
 		crossFire = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionCross, JetStrategyUtil.ICON_ROTATE);
 		controlIcons.add(pin);
 		controlIcons.add(crossFire);
-		scene.setOnSceneTouchListener(this);
 		scene.registerTouchArea(pin);
 		scene.registerTouchArea(crossFire);
-		scene.getLastChild().attachChild(jet);
-		scene.getLastChild().attachChild(jetClone);
-		scene.getLastChild().attachChild(pin);
-		scene.getLastChild().attachChild(crossFire);
-		return scene;
+	}
+
+	private void createJetClone()
+	{
+		jetClone = new Jet(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionJetClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		jetClone.setAlpha(CLONE_ALPHA);
+		ParallelEntityModifier parallelEntityModifier = new ParallelEntityModifier(new AlphaModifier(1f, CLONE_ALPHA, CLONE_END_ALPHA), new ScaleModifier(1f, 1, 0.6f));
+		ParallelEntityModifier parallelEntityModifier2 = new ParallelEntityModifier(new AlphaModifier(1f, CLONE_END_ALPHA, CLONE_ALPHA), new ScaleModifier(1f, 0.6f, 1));
+		SequenceEntityModifier sequenceEntityModifier = new SequenceEntityModifier(parallelEntityModifier, parallelEntityModifier2);
+		jetClone.registerEntityModifier(new LoopEntityModifier(sequenceEntityModifier));
 	}
 
 	@SuppressWarnings("unused")
 	private void switchToEnemyBackground(Scene scene)
 	{
 		final AutoParallaxBackground autoParallaxBackgroundEnemy = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - parallaxLayerBackEnemy.getHeight(), parallaxLayerBackEnemy)));
-		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, parallaxLayerMiddleEnemy)));
+		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - textureRegionParallaxLayerBackEnemy.getHeight(), textureRegionParallaxLayerBackEnemy)));
+		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, textureRegsionParallaxLayerMiddleEnemy)));
 		scene.setBackground(autoParallaxBackgroundEnemy);
 	}
 	

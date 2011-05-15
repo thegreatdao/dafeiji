@@ -4,8 +4,8 @@ import org.anddev.andengine.entity.modifier.PathModifier;
 import org.anddev.andengine.entity.modifier.PathModifier.Path;
 import org.anddev.andengine.entity.modifier.RotationModifier;
 import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
-import org.anddev.andengine.entity.sprite.AnimatedSprite;
-import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
+import org.anddev.andengine.entity.sprite.Sprite;
+import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.util.MathUtils;
 
 import com.emptyyourmind.enums.Direction;
@@ -14,7 +14,7 @@ import com.emptyyourmind.enums.Direction;
  * @author Self-Less
  *
  */
-public class Jet extends AnimatedSprite
+public class Jet extends Sprite
 {
 	public static final int[] JET54_REFERENCE_POINT_UP = new int[]{2, 0};
 	public static final int[] JET54_REFERENCE_POINT_LEFT = new int[]{3, 2};
@@ -27,7 +27,7 @@ public class Jet extends AnimatedSprite
 	private int cellSideLength;
 	private Direction direction = Direction.UP;
 
-	public Jet(float pX, float pY, TiledTextureRegion textureRegion, int[] indexes, int cellSideLength)
+	public Jet(float pX, float pY, TextureRegion textureRegion, int[] indexes, int cellSideLength)
 	{
 		super(pX, pY, textureRegion);
 		if(indexes == null)
