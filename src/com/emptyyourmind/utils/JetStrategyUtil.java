@@ -8,6 +8,8 @@ public class JetStrategyUtil
 {
 	public static final String ICON_MOVE = "move";
 	public static final String ICON_ROTATE = "rotate";
+	public static final int CAMERA_WIDTH = 720;
+	public static final int CAMERA_HEIGHT = 480;
 	
 	public static int[] findTargetCellCoordinates(float clickedX, float clickedY, int numOfHorCells, int numOfVerCells, int cellSideLength)
 	{

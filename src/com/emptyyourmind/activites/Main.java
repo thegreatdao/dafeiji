@@ -13,6 +13,7 @@ import org.anddev.andengine.entity.IEntity;
 import org.anddev.andengine.entity.modifier.AlphaModifier;
 import org.anddev.andengine.entity.modifier.LoopEntityModifier;
 import org.anddev.andengine.entity.modifier.ParallelEntityModifier;
+import org.anddev.andengine.entity.modifier.ScaleAtModifier;
 import org.anddev.andengine.entity.modifier.ScaleModifier;
 import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
@@ -31,6 +32,8 @@ import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 
+import android.view.Menu;
+
 import com.emptyyourmind.enums.Direction;
 import com.emptyyourmind.sprites.ControlIcon;
 import com.emptyyourmind.sprites.Jet;
@@ -40,10 +43,12 @@ import com.emptyyourmind.utils.JetStrategyUtil;
  * @author Self-Less
  *
  */
+@SuppressWarnings("unused")
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
-	private static final String HUD_HEALTH_BAR = "health.png";
+	private static final String HUD_HEALTH_BAR_BORDER = "healthbar_border.png";
+	private static final String HUD_HEALTH_BAR = "healthbar.png";
 	private static final String HUD_VS = "vs.png";
 	private static final String HUD_JET = "jet_thumb.png";
 	private static final long SECOND_PER_FRAME_FLAME = 150L;
@@ -62,10 +67,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private static final float CLONE_END_ALPHA = 0.4f;
 	private static final int NUM_OF_LAYERS = 2;
 	private static final int CELL_SIDE_LENGTH = 60;
-	private static final int CAMERA_WIDTH = 720;
-	private static final int CAMERA_HEIGHT = 480;
-	private static final int NUM_OF_HORIZONTAL_CELLS = CAMERA_WIDTH / CELL_SIDE_LENGTH;
-	private static final int NUM_OF_VERTICAL_CELLS = CAMERA_HEIGHT / CELL_SIDE_LENGTH;
+	private static final int NUM_OF_HORIZONTAL_CELLS = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
+	private static final int NUM_OF_VERTICAL_CELLS = JetStrategyUtil.CAMERA_HEIGHT / CELL_SIDE_LENGTH;
 
 	private Camera camera;
 	private Texture textureMain;
@@ -84,14 +87,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private TextureRegion textureRegionParallaxLayerFrontLayer;
 	private TextureRegion textureRegionParallaxLayerBackEnemy;
 	private TextureRegion textureRegionParallaxLayerMiddleEnemy;
-	private TextureRegion textureRegionHealthBar;
+	private TextureRegion textureRegionHealthBarBorder;
 	private TextureRegion textureRegionVS;
 	private TextureRegion textureRegionJetThumb;
 	private TiledTextureRegion textureRegionFlame;
 	private Scene scene;
 	private Jet jet;
 	private Jet jetClone;
-	private Sprite healthBar;
+	private Sprite healthBarBorder;
 	private List<ControlIcon> controlIcons = new ArrayList<ControlIcon>(2);
 	private ControlIcon pin;
 	private ControlIcon crossFire;
@@ -101,6 +104,10 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private int[] target;
 	private int  rotationCount;	
 	private Direction direction = Direction.UP;
+	private TextureRegion textureRegionHealthBar;
+	private Sprite healthBar;
+	private Sprite healthBarBorder2;
+	private Sprite healthBar2;
 	
 	@Override
 	public void onLoadComplete()
@@ -110,8 +117,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	@Override
 	public Engine onLoadEngine()
 	{
-		camera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
-		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), camera));
+		camera = new Camera(0, 0, JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT);
+		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT), camera));
 	}
 
 	@Override
@@ -128,7 +135,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionJetClone = textureRegionJet.clone();
 		textureRegionCross = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_CROSS_ICON, 301, 0);
 		textureRegionPin = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_PIN_ICON, 361, 0);
-		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR, 421, 0);
+		textureRegionHealthBarBorder = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR_BORDER, 421, 0);
+		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR, 661, 0);
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, HUD_VS, 0, 0);
 		textureRegionJetThumb = TextureRegionFactory.createFromAsset(textureJetThumb, this, HUD_JET, 0, 0);
 		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
@@ -150,7 +158,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	public Scene onLoadScene()
 	{
 		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - textureRegionParallaxLayerBackLayer.getHeight(), textureRegionParallaxLayerBackLayer)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, JetStrategyUtil.CAMERA_HEIGHT - textureRegionParallaxLayerBackLayer.getHeight(), textureRegionParallaxLayerBackLayer)));
 		/*autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(3.0f, new Sprite(0,  CAMERA_HEIGHT / 2, textureRegionParallaxLayerMiddleLayer)));
 		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(1.0f, new Sprite(0,  CAMERA_HEIGHT / 4, textureRegionParallaxLayerFrontLayer)));
 		*/
@@ -163,19 +171,46 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		jet.attachChild(new AnimatedSprite(120, 231, textureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
 		createJetClone();
 		createControl();
-		scene.setOnSceneTouchListener(this);
-		healthBar = new Sprite(60, 30, textureRegionHealthBar);
-		IEntity hudLayer = scene.getChild(LAYER_HUD);
-		hudLayer.attachChild(new Sprite(420, 30, textureRegionHealthBar.clone()));
-		hudLayer.attachChild(healthBar);
-		hudLayer.attachChild(new Sprite(304, 20, textureRegionVS));
+		creatHUDLayer();
+		createObjectsLayer();
 //		hudLayer.attachChild(new Sprite(10, 20, textureRegionJetThumb));
+		scene.setOnSceneTouchListener(this);
+		return scene;
+	}
+
+	private void createObjectsLayer()
+	{
 		IEntity objectsLayer = scene.getChild(LAYER_OBJECTS);
 		objectsLayer.attachChild(jet);
 		objectsLayer.attachChild(jetClone);
 		objectsLayer.attachChild(pin);
 		objectsLayer.attachChild(crossFire);
-		return scene;
+	}
+
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu)
+	{
+		
+		ScaleAtModifier scaleModifier = new ScaleAtModifier(1f, 1, 0.75f, 1, 1, 1, 1);
+		healthBar.registerEntityModifier(scaleModifier);
+		return true;
+	}
+
+	private void creatHUDLayer()
+	{
+		IEntity hudLayer = scene.getChild(LAYER_HUD);
+//		hudLayer.registerEntityModifier(new MoveModifier(1f, 0, 0, 100, 300));
+		healthBarBorder = new Sprite(60, 30, textureRegionHealthBarBorder);
+		healthBar = new Sprite(4, 5, textureRegionHealthBar);
+		healthBarBorder.attachChild(healthBar);
+		hudLayer.attachChild(healthBarBorder);
+		healthBarBorder2 = new Sprite(420, 30, textureRegionHealthBarBorder.clone());
+		hudLayer.attachChild(healthBarBorder2);
+		healthBar2 = new Sprite(4, 5, textureRegionHealthBar.clone());
+		healthBarBorder2.attachChild(healthBar2);
+		healthBar2.registerEntityModifier(new ScaleAtModifier(0.25f, 1, 0.75f, 1, 1, 1, 1));
+		hudLayer.attachChild(new Sprite(304, 20, textureRegionVS));
 	}
 	
 	@Override
@@ -255,16 +290,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		jetClone.registerEntityModifier(new LoopEntityModifier(sequenceEntityModifier));
 	}
 
-	@SuppressWarnings("unused")
 	private void switchToEnemyBackground(Scene scene)
 	{
 		final AutoParallaxBackground autoParallaxBackgroundEnemy = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - textureRegionParallaxLayerBackEnemy.getHeight(), textureRegionParallaxLayerBackEnemy)));
-		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0,  CAMERA_HEIGHT / 2, textureRegionParallaxLayerMiddleEnemy)));
+		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, JetStrategyUtil.CAMERA_HEIGHT - textureRegionParallaxLayerBackEnemy.getHeight(), textureRegionParallaxLayerBackEnemy)));
+		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0,  JetStrategyUtil.CAMERA_HEIGHT / 2, textureRegionParallaxLayerMiddleEnemy)));
 		scene.setBackground(autoParallaxBackgroundEnemy);
 	}
 	
-	@SuppressWarnings("unused")
 	private void setMissleTarget(float x, float y, IEntity layer)
 	{
 		int[] cellCoordinates = JetStrategyUtil.findTargetCellCoordinates(x, y, NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
@@ -275,8 +308,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	
 	private IEntity drawGrid(final Scene scene)
 	{
-		final float num_of_vertical_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
-		final float num_of_horizontal_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
+		final float num_of_vertical_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
+		final float num_of_horizontal_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		
 		final IEntity gridLayer = scene.getFirstChild();
 		for (int i = 0; i < num_of_vertical_lines; i++)
@@ -284,7 +317,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			final float x1 = i * CELL_SIDE_LENGTH;
 			final float x2 = x1;
 			final float y1 = 0;
-			final float y2 = CAMERA_WIDTH;
+			final float y2 = JetStrategyUtil.CAMERA_WIDTH;
 
 			final Line lineLightLeft = new Line(x1-1, y1, x2-1, y2, 1);
 			lineLightLeft.setColor(0.2f, 0.4f, 0.4f, 0.2f);
@@ -300,7 +333,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		for (int i = 0; i < num_of_horizontal_lines; i++)
 		{
 			final float x1 = 0;
-			final float x2 = CAMERA_WIDTH;
+			final float x2 = JetStrategyUtil.CAMERA_WIDTH;
 			final float y1 = i * CELL_SIDE_LENGTH;
 			final float y2 = y1;
 			
