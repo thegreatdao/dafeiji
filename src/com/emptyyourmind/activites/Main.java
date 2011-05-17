@@ -50,7 +50,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private static final String HUD_HEALTH_BAR_BORDER = "healthbar_border.png";
 	private static final String HUD_HEALTH_BAR = "healthbar.png";
 	private static final String HUD_VS = "vs.png";
-	private static final String HUD_JET = "jet_thumb.png";
 	private static final long SECOND_PER_FRAME_FLAME = 150L;
 	private static final String SPRITE_JET = "jet.png";
 	private static final String SPRITE_FLAME_RED = "flame_red.png";
@@ -138,7 +137,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionHealthBarBorder = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR_BORDER, 421, 0);
 		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR, 661, 0);
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, HUD_VS, 0, 0);
-		textureRegionJetThumb = TextureRegionFactory.createFromAsset(textureJetThumb, this, HUD_JET, 0, 0);
 		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
