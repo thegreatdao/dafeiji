@@ -1,5 +1,10 @@
 package com.emptyyourmind.activites;
 
+import java.io.IOException;
+
+import org.anddev.andengine.audio.music.MusicFactory;
+import org.anddev.andengine.audio.sound.Sound;
+import org.anddev.andengine.audio.sound.SoundFactory;
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
 import org.anddev.andengine.engine.options.EngineOptions;
@@ -11,6 +16,8 @@ import org.anddev.andengine.entity.modifier.PathModifier;
 import org.anddev.andengine.entity.modifier.PathModifier.IPathModifierListener;
 import org.anddev.andengine.entity.modifier.PathModifier.Path;
 import org.anddev.andengine.entity.modifier.RotationModifier;
+import org.anddev.andengine.entity.modifier.ScaleModifier;
+import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.Scene.IOnAreaTouchListener;
 import org.anddev.andengine.entity.scene.Scene.ITouchArea;
@@ -24,6 +31,7 @@ import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
+import org.anddev.andengine.util.Debug;
 
 import android.content.Intent;
 
@@ -63,6 +71,7 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 	private Texture textureFlame;
 	private TiledTextureRegion textureRegionFlame;
 	private TextureRegion textureRegionJetShadow;
+	private Sound clickSound;
 	
 	@Override
 	public void onLoadComplete()
@@ -73,13 +82,17 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 	public Engine onLoadEngine()
 	{
 		camera = new Camera(0, 0, JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT);
-		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT), camera));
+		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, 
+				new RatioResolutionPolicy(JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT), camera)
+				.setNeedsMusic(true).setNeedsSound(true));
 	}
 
 	@Override
 	public void onLoadResources()
 	{
 		TextureRegionFactory.setAssetBasePath("gfx/");
+		SoundFactory.setAssetBasePath("mfx/");
+		MusicFactory.setAssetBasePath("mfx/");
 		textureMain = new Texture(1024, 512, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureButtons = new Texture(2048, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureButtonExit = new Texture(1024, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
@@ -96,8 +109,16 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 		textureRegionButtonExit = TextureRegionFactory.createTiledFromAsset(textureButtonExit, this, BUTTON_EXIT, 0, 0, 2, 1);
 		
 		mEngine.getTextureManager().loadTextures(textureMain, textureButtons, textureButtonExit, textureJet, textureFlame, textureJetShadow);
-				
+		try
+		{
+			clickSound= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
+		}
+		catch (final IOException e)
+		{
+			Debug.e("Error", e);
+		}
 	}
+				
 
 	@Override
 	public Scene onLoadScene()
@@ -124,11 +145,13 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 	private void createFloatingJet()
 	{
 		final Sprite spriteJet = new Sprite(0, 0, textureRegionJet);
-		AnimatedSprite spriteFlame = new AnimatedSprite(16, 51, textureRegionFlame);
+		AnimatedSprite spriteFlame = new AnimatedSprite(15, 51, textureRegionFlame);
 		Sprite spriteJetShadow = new Sprite(20, 20, textureRegionJetShadow);
+		spriteJetShadow.setAlpha(0.6f);
+		spriteJetShadow.registerEntityModifier(new LoopEntityModifier(new SequenceEntityModifier(new ScaleModifier(1f, 1, 0.6f), new ScaleModifier(2f, 0.6f, 1))));
 		spriteJet.attachChild(spriteFlame);
 		spriteFlame.attachChild(spriteJetShadow);
-		spriteFlame.setScale(0.38f, 0.38f);
+		spriteFlame.setScale(0.37f, 0.37f);
 		spriteFlame.animate(200L);
 		spriteJet.setRotation(180);
 		final Path path = new Path(5).to(100, 60)
@@ -141,16 +164,16 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 			public void onWaypointPassed(final PathModifier pPathModifier, final IEntity pEntity, final int pWaypointIndex) {
 				switch(pWaypointIndex) {
 					case 0:
-						spriteJet.registerEntityModifier(new RotationModifier(0.2f, 180, 180));
+						spriteJet.registerEntityModifier(new RotationModifier(0.4f, 180, 180));
 						break;
 					case 1:
-						spriteJet.registerEntityModifier(new RotationModifier(0.2f, 180, 90));
+						spriteJet.registerEntityModifier(new RotationModifier(0.4f, 180, 90));
 						break;
 					case 2:
-						spriteJet.registerEntityModifier(new RotationModifier(0.2f, 90, 0));
+						spriteJet.registerEntityModifier(new RotationModifier(0.4f, 90, 0));
 						break;
 					case 3:
-						spriteJet.registerEntityModifier(new RotationModifier(0.2f, 0, -90));
+						spriteJet.registerEntityModifier(new RotationModifier(0.4f, 0, -90));
 						break;
 				}
 			}
@@ -159,20 +182,20 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 	}
 
 	@Override
-	public boolean onAreaTouched(TouchEvent pSceneTouchEvent, ITouchArea pTouchArea, float pTouchAreaLocalX, float pTouchAreaLocalY)
+	public boolean onAreaTouched(TouchEvent touchEvent, ITouchArea touchArea, float touchAreaLocalX, float touchAreaLocalY)
 	{	
-		AnimatedSprite currentButton = (AnimatedSprite)pTouchArea;
-		if (pSceneTouchEvent.isActionDown()) 
+		AnimatedSprite currentButton = (AnimatedSprite)touchArea;
+		if (touchEvent.isActionDown()) 
 		{
 			currentButton.setCurrentTileIndex(1, 0);
+			clickSound.play();
+		}
+		if (touchEvent.isActionUp())
+		{
 			if(currentButton == buttonNewGame)
 			{
 				startActivity(new Intent(this, Main.class));
-				currentButton.setCurrentTileIndex(0, 0);
 			}
-		}
-		if (pSceneTouchEvent.isActionUp())
-		{
 			currentButton.setCurrentTileIndex(0, 0);
 		}
 		return true;

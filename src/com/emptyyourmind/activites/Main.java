@@ -1,9 +1,14 @@
 package com.emptyyourmind.activites;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.anddev.andengine.audio.music.Music;
+import org.anddev.andengine.audio.music.MusicFactory;
+import org.anddev.andengine.audio.sound.Sound;
+import org.anddev.andengine.audio.sound.SoundFactory;
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
 import org.anddev.andengine.engine.options.EngineOptions;
@@ -31,6 +36,7 @@ import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
+import org.anddev.andengine.util.Debug;
 
 import android.view.Menu;
 
@@ -107,6 +113,9 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Sprite healthBar;
 	private Sprite healthBarBorder2;
 	private Sprite healthBar2;
+	private Music backgourndMusic;
+	private Sound jetStart;
+	private Sound clickSound;
 	
 	@Override
 	public void onLoadComplete()
@@ -117,14 +126,18 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	public Engine onLoadEngine()
 	{
 		camera = new Camera(0, 0, JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT);
-		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, new RatioResolutionPolicy(JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT), camera));
+		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, 
+				new RatioResolutionPolicy(JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT), camera)
+				.setNeedsSound(true).setNeedsMusic(true));
 	}
 
 	@Override
 	public void onLoadResources()
 	{
 		TextureRegionFactory.setAssetBasePath("gfx/");
-
+		SoundFactory.setAssetBasePath("mfx/");
+		MusicFactory.setAssetBasePath("mfx/");
+		
 		textureMain = new Texture(1024, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureFlame = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureVS = new Texture(128, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
@@ -150,6 +163,15 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		
 		mEngine.getTextureManager().loadTextures(textureMain, textureAutoParallaxBackgroundSmallCloud, 
 				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, textureFlame, textureVS, textureJetThumb);
+		try {
+			backgourndMusic= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "main.mp3");
+			clickSound= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
+			backgourndMusic.setLooping(true);
+			backgourndMusic.play();
+			jetStart = SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "start.mp3");
+		} catch (final IOException e) {
+			Debug.e("Error", e);
+		}
 	}
 
 	@Override
@@ -222,6 +244,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		}
 		else
 		{
+			clickSound.play();
 			if(controlIcon.getName().equals(JetStrategyUtil.ICON_MOVE))
 			{
 				moveJet(target);
@@ -264,6 +287,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 
 	private void moveJet(int[] target)
 	{
+		jetStart.play();
 		jet.moveTo(target, direction);
 		resetIconsAndReference();
 	}
@@ -317,15 +341,15 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			final float y1 = 0;
 			final float y2 = JetStrategyUtil.CAMERA_WIDTH;
 
-			final Line lineLightLeft = new Line(x1-1, y1, x2-1, y2, 1);
-			lineLightLeft.setColor(0.2f, 0.4f, 0.4f, 0.2f);
+			/*final Line lineLightLeft = new Line(x1-1, y1, x2-1, y2, 1);
+			lineLightLeft.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
 			final Line mainLine = new Line(x1, y1, x2, y2, 1);
-			mainLine.setColor(0.8f, 0.8f, 0.8f);
-			final Line lineLightRight = new Line(x1+1, y1, x2+1, y2, 1);
-			lineLightRight.setColor(0.2f, 0.4f, 0.4f, 0.2f);
-			gridLayer.attachChild(lineLightLeft);
+			mainLine.setColor(0.8f, 0.8f, 0.8f, 0.6f);
+			/*final Line lineLightRight = new Line(x1+1, y1, x2+1, y2, 1);
+			lineLightRight.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
+//			gridLayer.attachChild(lineLightLeft);
 			gridLayer.attachChild(mainLine);
-			gridLayer.attachChild(lineLightRight);
+//			gridLayer.attachChild(lineLightRight);
 		}
 		
 		for (int i = 0; i < num_of_horizontal_lines; i++)
@@ -335,15 +359,15 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			final float y1 = i * CELL_SIDE_LENGTH;
 			final float y2 = y1;
 			
-			final Line lineLightTop = new Line(x1, y1-1, x2, y2-1, 1);
-			lineLightTop.setColor(0.2f, 0.4f, 0.4f, 0.2f);
+		/*	final Line lineLightTop = new Line(x1, y1-1, x2, y2-1, 1);
+			lineLightTop.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
 			final Line mainLine = new Line(x1, y1, x2, y2, 1);
-			mainLine.setColor(0.8f, 0.8f, 0.8f);
-			final Line lineLightBottom = new Line(x1, y1+1, x2, y2+1, 1);
-			lineLightBottom.setColor(0.2f, 0.4f, 0.4f, 0.2f);
-			gridLayer.attachChild(lineLightTop);
+			mainLine.setColor(0.8f, 0.8f, 0.8f, 0.6f);
+	/*		final Line lineLightBottom = new Line(x1, y1+1, x2, y2+1, 1);
+			lineLightBottom.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
+//			gridLayer.attachChild(lineLightTop);
 			gridLayer.attachChild(mainLine);
-			gridLayer.attachChild(lineLightBottom);
+//			gridLayer.attachChild(lineLightBottom);
 		}
 		return gridLayer;
 	}
