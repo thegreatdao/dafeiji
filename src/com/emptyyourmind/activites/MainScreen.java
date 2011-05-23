@@ -2,6 +2,7 @@ package com.emptyyourmind.activites;
 
 import java.io.IOException;
 
+import org.anddev.andengine.audio.music.Music;
 import org.anddev.andengine.audio.music.MusicFactory;
 import org.anddev.andengine.audio.sound.Sound;
 import org.anddev.andengine.audio.sound.SoundFactory;
@@ -72,6 +73,7 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 	private TiledTextureRegion textureRegionFlame;
 	private TextureRegion textureRegionJetShadow;
 	private Sound clickSound;
+	private Music bGMusic;
 	
 	@Override
 	public void onLoadComplete()
@@ -112,6 +114,9 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 		try
 		{
 			clickSound= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
+			bGMusic = MusicFactory.createMusicFromAsset(getMusicManager(), this, "main.mp3");
+			bGMusic.setLooping(true);
+			bGMusic.play();
 		}
 		catch (final IOException e)
 		{
@@ -194,11 +199,22 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 		{
 			if(currentButton == buttonNewGame)
 			{
+				bGMusic.pause();
 				startActivity(new Intent(this, Main.class));
 			}
 			currentButton.setCurrentTileIndex(0, 0);
 		}
 		return true;
+	}
+
+	@Override
+	protected void onResume()
+	{
+		super.onResume();
+		if(bGMusic != null && !bGMusic.isPlaying())
+		{
+			bGMusic.resume();
+		}
 	}
 
 }

@@ -53,6 +53,8 @@ import com.emptyyourmind.utils.JetStrategyUtil;
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
+	private static final String PLAYER_ONE = "p1.png";
+	private static final String PLAYER_TWO = "p2.png";
 	private static final String HUD_HEALTH_BAR_BORDER = "healthbar_border.png";
 	private static final String HUD_HEALTH_BAR = "healthbar.png";
 	private static final String HUD_VS = "vs.png";
@@ -116,6 +118,9 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Music backgourndMusic;
 	private Sound jetStart;
 	private Sound clickSound;
+	private Texture texturePlayerIcons;
+	private TextureRegion textureRegionPlayerOneIcon;
+	private TextureRegion textureRegionPlayerTwoIcon;
 	
 	@Override
 	public void onLoadComplete()
@@ -138,6 +143,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		SoundFactory.setAssetBasePath("mfx/");
 		MusicFactory.setAssetBasePath("mfx/");
 		
+		texturePlayerIcons = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureMain = new Texture(1024, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureFlame = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureVS = new Texture(128, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
@@ -150,6 +156,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionHealthBarBorder = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR_BORDER, 421, 0);
 		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR, 661, 0);
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, HUD_VS, 0, 0);
+		textureRegionPlayerOneIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, PLAYER_ONE, 0, 0);
+		textureRegionPlayerTwoIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, PLAYER_TWO, 91, 0);
 		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
@@ -162,9 +170,10 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionParallaxLayerMiddleEnemy = textureRegionParallaxLayerMiddleLayer.clone();
 		
 		mEngine.getTextureManager().loadTextures(textureMain, textureAutoParallaxBackgroundSmallCloud, 
-				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, textureFlame, textureVS, textureJetThumb);
+				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, 
+				textureFlame, textureVS, textureJetThumb, texturePlayerIcons);
 		try {
-			backgourndMusic= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "main.mp3");
+			backgourndMusic= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "game.mp3");
 			clickSound= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
 			backgourndMusic.setLooping(true);
 			backgourndMusic.play();
@@ -231,6 +240,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		healthBarBorder2.attachChild(healthBar2);
 		healthBar2.registerEntityModifier(new ScaleAtModifier(0.25f, 1, 0.75f, 1, 1, 1, 1));
 		hudLayer.attachChild(new Sprite(304, 20, textureRegionVS));
+		hudLayer.attachChild(new Sprite(60, 65, textureRegionPlayerOneIcon));
+		hudLayer.attachChild(new Sprite(575, 65, textureRegionPlayerTwoIcon));
 	}
 	
 	@Override
