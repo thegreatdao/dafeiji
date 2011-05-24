@@ -11,12 +11,15 @@ import org.anddev.andengine.audio.sound.Sound;
 import org.anddev.andengine.audio.sound.SoundFactory;
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.Camera;
+import org.anddev.andengine.engine.handler.timer.ITimerCallback;
+import org.anddev.andengine.engine.handler.timer.TimerHandler;
 import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.EngineOptions.ScreenOrientation;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.anddev.andengine.entity.IEntity;
 import org.anddev.andengine.entity.modifier.AlphaModifier;
 import org.anddev.andengine.entity.modifier.LoopEntityModifier;
+import org.anddev.andengine.entity.modifier.MoveModifier;
 import org.anddev.andengine.entity.modifier.ParallelEntityModifier;
 import org.anddev.andengine.entity.modifier.ScaleAtModifier;
 import org.anddev.andengine.entity.modifier.ScaleModifier;
@@ -29,7 +32,10 @@ import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
 import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxEntity;
 import org.anddev.andengine.entity.sprite.AnimatedSprite;
 import org.anddev.andengine.entity.sprite.Sprite;
+import org.anddev.andengine.entity.text.ChangeableText;
 import org.anddev.andengine.input.touch.TouchEvent;
+import org.anddev.andengine.opengl.font.Font;
+import org.anddev.andengine.opengl.font.StrokeFont;
 import org.anddev.andengine.opengl.texture.Texture;
 import org.anddev.andengine.opengl.texture.TextureOptions;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
@@ -38,6 +44,8 @@ import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 import org.anddev.andengine.util.Debug;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.view.Menu;
 
 import com.emptyyourmind.enums.Direction;
@@ -53,8 +61,9 @@ import com.emptyyourmind.utils.JetStrategyUtil;
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
-	private static final String PLAYER_ONE = "p1.png";
-	private static final String PLAYER_TWO = "p2.png";
+	private static final String SPRITE_DISTORTED_STAR = "distorted_star.png";
+	private static final String SPRTE_PLAYER_ONE = "p1.png";
+	private static final String SPRITE_PLAYER_TWO = "p2.png";
 	private static final String HUD_HEALTH_BAR_BORDER = "healthbar_border.png";
 	private static final String HUD_HEALTH_BAR = "healthbar.png";
 	private static final String HUD_VS = "vs.png";
@@ -76,6 +85,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private static final int CELL_SIDE_LENGTH = 60;
 	private static final int NUM_OF_HORIZONTAL_CELLS = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 	private static final int NUM_OF_VERTICAL_CELLS = JetStrategyUtil.CAMERA_HEIGHT / CELL_SIDE_LENGTH;
+	private static final int TIME_INTERVAL_TO_UPDATE_BG = 10;
 
 	private Camera camera;
 	private Texture textureMain;
@@ -115,12 +125,21 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Sprite healthBar;
 	private Sprite healthBarBorder2;
 	private Sprite healthBar2;
-	private Music backgourndMusic;
-	private Sound jetStart;
-	private Sound clickSound;
+	private Music musicBackground;
+	private Sound soundJetStart;
+	private Sound soundClick;
 	private Texture texturePlayerIcons;
+	private Texture fontTexture;
+	private Texture textureDecorations;
 	private TextureRegion textureRegionPlayerOneIcon;
 	private TextureRegion textureRegionPlayerTwoIcon;
+	private TextureRegion textureRegionStar;
+	private Font font;
+	private ChangeableText text;
+	private long startTimeLong = System.currentTimeMillis();
+	private long startTimeShort = System.currentTimeMillis();
+	private final List<Sprite> STARS_IN_SHORT_TIME_INTERVAL = new ArrayList<Sprite>();  
+	private final List<Sprite> STARS_IN_LONG_TIME_INTERVAL = new ArrayList<Sprite>();  
 	
 	@Override
 	public void onLoadComplete()
@@ -143,11 +162,16 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		SoundFactory.setAssetBasePath("mfx/");
 		MusicFactory.setAssetBasePath("mfx/");
 		
-		texturePlayerIcons = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		texturePlayerIcons = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);		
 		textureMain = new Texture(1024, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureFlame = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureVS = new Texture(128, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureJetThumb = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureDecorations = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureRegionPlayerTwoIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, SPRITE_PLAYER_TWO, 91, 0);
+		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
+		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
+		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
 		textureRegionFlame = TextureRegionFactory.createTiledFromAsset(textureFlame, this, FLAMES[new Random().nextInt(FLAMES.length)], 0, 0, 4, 1);
 		textureRegionJet = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_JET, 0, 0);
 		textureRegionJetClone = textureRegionJet.clone();
@@ -156,11 +180,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionHealthBarBorder = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR_BORDER, 421, 0);
 		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR, 661, 0);
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, HUD_VS, 0, 0);
-		textureRegionPlayerOneIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, PLAYER_ONE, 0, 0);
-		textureRegionPlayerTwoIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, PLAYER_TWO, 91, 0);
-		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
-		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
-		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
+		textureRegionPlayerOneIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, SPRTE_PLAYER_ONE, 0, 0);
+		textureRegionStar = TextureRegionFactory.createFromAsset(textureDecorations, this, SPRITE_DISTORTED_STAR, 0, 0);
 		
 		textureRegionParallaxLayerBackLayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackground, this, BG[new Random().nextInt(BG.length)], 0, 0);
 		textureRegionParallaxLayerMiddleLayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackgroundSmallCloud, this, "cloud.png", 0, 0);
@@ -171,16 +192,25 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		
 		mEngine.getTextureManager().loadTextures(textureMain, textureAutoParallaxBackgroundSmallCloud, 
 				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, 
-				textureFlame, textureVS, textureJetThumb, texturePlayerIcons);
+				textureFlame, textureVS, textureJetThumb, texturePlayerIcons, textureDecorations);
 		try {
-			backgourndMusic= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "game.mp3");
-			clickSound= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
-			backgourndMusic.setLooping(true);
-			backgourndMusic.play();
-			jetStart = SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "start.mp3");
+			musicBackground= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "game.mp3");
+			soundClick= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
+			musicBackground.setLooping(true);
+			musicBackground.setVolume(0.4f);
+			musicBackground.play();
+			soundJetStart = SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "start.mp3");
+			soundJetStart.setVolume(0.8f);
 		} catch (final IOException e) {
 			Debug.e("Error", e);
 		}
+		
+		fontTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+
+		font = new StrokeFont(fontTexture, Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL), 18, true, Color.BLACK, 2, Color.WHITE, false);
+
+		this.mEngine.getTextureManager().loadTexture(fontTexture);
+		this.mEngine.getFontManager().loadFont(font);
 	}
 
 	@Override
@@ -195,18 +225,95 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		scene.setBackground(autoParallaxBackgroundPlayer);
 		scene.setOnSceneTouchListener(this);
 		
+		final Random random = new Random();
 		drawGrid(scene);
+		createDistortedStars(random, false);
+		createDistortedStars(random, true);
 		jet = new Jet(240, 180, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jet.attachChild(new AnimatedSprite(120, 231, textureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
 		createJetClone();
 		createControl();
 		creatHUDLayer();
 		createObjectsLayer();
-//		hudLayer.attachChild(new Sprite(10, 20, textureRegionJetThumb));
+		
 		scene.setOnSceneTouchListener(this);
+		scene.registerUpdateHandler(
+			new TimerHandler(1 / 20.0f, true, new ITimerCallback()
+			{
+				@Override
+				public void onTimePassed(final TimerHandler pTimerHandler)
+				{
+					Main.this.text.setText("Time: " + (int)Main.this.mEngine.getSecondsElapsedTotal());
+					long now = System.currentTimeMillis();
+					if(now - Main.this.startTimeLong >= 25000)
+					{
+						Main.this.startTimeLong = now;
+						showStar(true, random);
+					}
+					if(now - Main.this.startTimeShort >= 15000)
+					{
+						Main.this.startTimeShort = now;
+						showStar(false, random);
+					}
+				}
+			})
+		);
+		
 		return scene;
 	}
 
+	private void createDistortedStars(Random random, boolean starsWithLongTimeInterval)
+	{
+		List<Sprite> stars = STARS_IN_LONG_TIME_INTERVAL;
+		if(!starsWithLongTimeInterval)
+		{
+			stars = STARS_IN_SHORT_TIME_INTERVAL;
+		}
+		for(int i=0; i < 60; i++)
+		{
+			int x = random.nextInt(JetStrategyUtil.CAMERA_WIDTH);
+			int y = random.nextInt(JetStrategyUtil.CAMERA_HEIGHT);
+			Sprite star = new Sprite(x, y, i==0?textureRegionStar:textureRegionStar.clone());
+			star.setVisible(false);
+			scene.getFirstChild().attachChild(star);
+			stars.add(star);
+		}
+	}
+
+	private void showStar(boolean starsWithLongTimeInterval, Random random)
+	{
+		List<Sprite> stars = STARS_IN_LONG_TIME_INTERVAL;
+		if(!starsWithLongTimeInterval)
+		{
+			stars = STARS_IN_SHORT_TIME_INTERVAL;
+		}
+		for(int i=0; i<stars.size(); i++)
+		{
+			Sprite star = stars.get(i);
+			star.setVisible(true);
+			float startScale = random.nextFloat();
+			float startAlpha = random.nextFloat();
+			AlphaModifier alphaModifier = new AlphaModifier(2f, 0, startAlpha);
+			ScaleModifier scaleModifier = new ScaleModifier(4f, 0, startScale);
+			if(starsWithLongTimeInterval)
+			{
+				alphaModifier = new AlphaModifier(4f, 0, startAlpha);
+				scaleModifier = new ScaleModifier(6f, 0, startScale);
+			}
+			ParallelEntityModifier firstparrallelEnitityModifier = new ParallelEntityModifier(alphaModifier, scaleModifier);
+			AlphaModifier alphaModifier2 = new AlphaModifier(4f, startAlpha, 0);
+			ScaleModifier scaleModifier2 = new ScaleModifier(4f, startScale, 0);
+			if(starsWithLongTimeInterval)
+			{
+				alphaModifier2 = new AlphaModifier(6f, startAlpha, 0);
+				scaleModifier2 = new ScaleModifier(6f, startScale, 0);
+			}
+			ParallelEntityModifier secondParrallelEnitityModifier = new ParallelEntityModifier(alphaModifier2, scaleModifier2);
+			star.registerEntityModifier(new SequenceEntityModifier(firstparrallelEnitityModifier, secondParrallelEnitityModifier));
+			star.setPosition(random.nextInt(JetStrategyUtil.CAMERA_WIDTH), random.nextInt(JetStrategyUtil.CAMERA_HEIGHT));
+		}
+	}
+	
 	private void createObjectsLayer()
 	{
 		IEntity objectsLayer = scene.getChild(LAYER_OBJECTS);
@@ -223,6 +330,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		
 		ScaleAtModifier scaleModifier = new ScaleAtModifier(1f, 1, 0.75f, 1, 1, 1, 1);
 		healthBar.registerEntityModifier(scaleModifier);
+		scene.getChild(LAYER_HUD).registerEntityModifier(new MoveModifier(2f, 0, 0, 0, -120));
 		return true;
 	}
 
@@ -242,6 +350,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		hudLayer.attachChild(new Sprite(304, 20, textureRegionVS));
 		hudLayer.attachChild(new Sprite(60, 65, textureRegionPlayerOneIcon));
 		hudLayer.attachChild(new Sprite(575, 65, textureRegionPlayerTwoIcon));
+		text =  new ChangeableText(310, 0, font, "Time: ", "Time: XXXX".length());
+		hudLayer.attachChild(text);
 	}
 	
 	@Override
@@ -255,7 +365,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		}
 		else
 		{
-			clickSound.play();
+			soundClick.play();
 			if(controlIcon.getName().equals(JetStrategyUtil.ICON_MOVE))
 			{
 				moveJet(target);
@@ -298,7 +408,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 
 	private void moveJet(int[] target)
 	{
-		jetStart.play();
+		soundJetStart.play();
 		jet.moveTo(target, direction);
 		resetIconsAndReference();
 	}
