@@ -61,6 +61,7 @@ import com.emptyyourmind.utils.JetStrategyUtil;
 public class Main extends BaseGameActivity implements IOnSceneTouchListener
 {
 
+	private static final int Y_UPPER_BOUND = 180;
 	private static final String SPRITE_DISTORTED_STAR = "distorted_star.png";
 	private static final String SPRTE_PLAYER_ONE = "p1.png";
 	private static final String SPRITE_PLAYER_TWO = "p2.png";
@@ -77,8 +78,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private static final String BG_TOKYO = "tokyo.png";
 	private static final String BG_SHANGHAI = "shanghai.png";
 	private static final String[] BG = new String[]{BG_TORONTO, BG_TOKYO, BG_SHANGHAI};
-	private static final String SPRITE_PIN_ICON = "pin.png";
-	private static final String SPRITE_CROSS_ICON = "cross.png";
+	private static final String SPRITE_ROTATE_ICON = "rotate.png";
+	private static final String SPRITE_MOVE_ICON = "move.png";
 	private static final float CLONE_ALPHA = 0.6f;
 	private static final float CLONE_END_ALPHA = 0.4f;
 	private static final int NUM_OF_LAYERS = 2;
@@ -95,10 +96,12 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Texture textureFlame;
 	private Texture textureVS;
 	private Texture textureJetThumb;
+	private Texture textureControlRotate;
+	private Texture textureControlMove;
 	private TextureRegion textureRegionJet;
 	private TextureRegion textureRegionJetClone;
-	private TextureRegion textureRegionPin;
-	private TextureRegion textureRegionCross;
+	private TiledTextureRegion textureRegionRotate;
+	private TiledTextureRegion textureRegionMove;
 	private TextureRegion textureRegionParallaxLayerBackLayer;
 	private TextureRegion textureRegionParallaxLayerMiddleLayer;
 	private TextureRegion textureRegionParallaxLayerFrontLayer;
@@ -113,8 +116,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Jet jetClone;
 	private Sprite healthBarBorder;
 	private List<ControlIcon> controlIcons = new ArrayList<ControlIcon>(2);
-	private ControlIcon pin;
-	private ControlIcon crossFire;
+	private ControlIcon controlRotate;
+	private ControlIcon controlMove;
 	private static final int INIT_XY_SPRITE = -600;
 	private static final int LAYER_OBJECTS = 0;
 	private static final int LAYER_HUD = 1;
@@ -139,7 +142,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private long startTimeLong = System.currentTimeMillis();
 	private long startTimeShort = System.currentTimeMillis();
 	private final List<Sprite> STARS_IN_SHORT_TIME_INTERVAL = new ArrayList<Sprite>();  
-	private final List<Sprite> STARS_IN_LONG_TIME_INTERVAL = new ArrayList<Sprite>();  
+	private final List<Sprite> STARS_IN_LONG_TIME_INTERVAL = new ArrayList<Sprite>(); 
+	private int menuOptionClickedTime;
 	
 	@Override
 	public void onLoadComplete()
@@ -172,11 +176,13 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
+		textureControlMove = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureControlRotate = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureRegionFlame = TextureRegionFactory.createTiledFromAsset(textureFlame, this, FLAMES[new Random().nextInt(FLAMES.length)], 0, 0, 4, 1);
 		textureRegionJet = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_JET, 0, 0);
 		textureRegionJetClone = textureRegionJet.clone();
-		textureRegionCross = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_CROSS_ICON, 301, 0);
-		textureRegionPin = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_PIN_ICON, 361, 0);
+		textureRegionRotate = TextureRegionFactory.createTiledFromAsset(textureControlRotate, this, SPRITE_ROTATE_ICON, 0, 0, 3, 1);
+		textureRegionMove = TextureRegionFactory.createTiledFromAsset(textureControlMove, this, SPRITE_MOVE_ICON, 0, 0, 3, 1);
 		textureRegionHealthBarBorder = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR_BORDER, 421, 0);
 		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, HUD_HEALTH_BAR, 661, 0);
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, HUD_VS, 0, 0);
@@ -192,7 +198,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		
 		mEngine.getTextureManager().loadTextures(textureMain, textureAutoParallaxBackgroundSmallCloud, 
 				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, 
-				textureFlame, textureVS, textureJetThumb, texturePlayerIcons, textureDecorations);
+				textureFlame, textureVS, textureJetThumb, texturePlayerIcons, textureDecorations, textureControlMove, textureControlRotate);
 		try {
 			musicBackground= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "game.mp3");
 			soundClick= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
@@ -232,7 +238,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		jet = new Jet(240, 180, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jet.attachChild(new AnimatedSprite(120, 231, textureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
 		createJetClone();
-		createControl();
+		createControls();
 		creatHUDLayer();
 		createObjectsLayer();
 		
@@ -272,7 +278,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		for(int i=0; i < 60; i++)
 		{
 			int x = random.nextInt(JetStrategyUtil.CAMERA_WIDTH);
-			int y = random.nextInt(JetStrategyUtil.CAMERA_HEIGHT);
+			int y = random.nextInt(Y_UPPER_BOUND);
 			Sprite star = new Sprite(x, y, i==0?textureRegionStar:textureRegionStar.clone());
 			star.setVisible(false);
 			scene.getFirstChild().attachChild(star);
@@ -310,7 +316,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			}
 			ParallelEntityModifier secondParrallelEnitityModifier = new ParallelEntityModifier(alphaModifier2, scaleModifier2);
 			star.registerEntityModifier(new SequenceEntityModifier(firstparrallelEnitityModifier, secondParrallelEnitityModifier));
-			star.setPosition(random.nextInt(JetStrategyUtil.CAMERA_WIDTH), random.nextInt(JetStrategyUtil.CAMERA_HEIGHT));
+			star.setPosition(random.nextInt(JetStrategyUtil.CAMERA_WIDTH), random.nextInt(Y_UPPER_BOUND));
 		}
 	}
 	
@@ -319,19 +325,25 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		IEntity objectsLayer = scene.getChild(LAYER_OBJECTS);
 		objectsLayer.attachChild(jet);
 		objectsLayer.attachChild(jetClone);
-		objectsLayer.attachChild(pin);
-		objectsLayer.attachChild(crossFire);
+		objectsLayer.attachChild(controlRotate);
+		objectsLayer.attachChild(controlMove);
 	}
 
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
-		
 		ScaleAtModifier scaleModifier = new ScaleAtModifier(1f, 1, 0.75f, 1, 1, 1, 1);
 		healthBar.registerEntityModifier(scaleModifier);
-		scene.getChild(LAYER_HUD).registerEntityModifier(new MoveModifier(2f, 0, 0, 0, -120));
-		return true;
+		if(menuOptionClickedTime++ % 2 == 0 )
+		{
+			scene.getChild(LAYER_HUD).registerEntityModifier(new MoveModifier(2f, 0, 0, 0, -120));
+		}
+		else
+		{
+			scene.getChild(LAYER_HUD).registerEntityModifier(new MoveModifier(2f, 0, 0, -120, 0));
+		}
+		return false;
 	}
 
 	private void creatHUDLayer()
@@ -381,8 +393,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private void showControlIcons()
 	{
 		resetIconsAndReference();
-		pin.setPosition(target[0] - CELL_SIDE_LENGTH, target[1]);
-		crossFire.setPosition(target[0] + CELL_SIDE_LENGTH, target[1]);
+		controlMove.setPosition(target[0] - CELL_SIDE_LENGTH, target[1]);
+		controlRotate.setPosition(target[0] + CELL_SIDE_LENGTH, target[1]);
 		jetClone.setPosition(target[0]-2*CELL_SIDE_LENGTH, target[1]);
 	}
 
@@ -397,8 +409,8 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 
 	private void resetIconsAndReference()
 	{
-		pin.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
-		crossFire.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
+		controlRotate.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
+		controlMove.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
 		jetClone.reset();
 		jetClone.setAlpha(CLONE_ALPHA);
@@ -413,14 +425,16 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		resetIconsAndReference();
 	}
 
-	private void createControl()
+	private void createControls()
 	{
-		pin = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionPin, JetStrategyUtil.ICON_MOVE);
-		crossFire = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionCross, JetStrategyUtil.ICON_ROTATE);
-		controlIcons.add(pin);
-		controlIcons.add(crossFire);
-		scene.registerTouchArea(pin);
-		scene.registerTouchArea(crossFire);
+		controlRotate = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionRotate, JetStrategyUtil.ICON_ROTATE);
+		controlRotate.animate(300L);
+		controlMove = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionMove, JetStrategyUtil.ICON_MOVE);
+		controlMove.animate(300L);
+		controlIcons.add(controlRotate);
+		controlIcons.add(controlMove);
+		scene.registerTouchArea(controlRotate);
+		scene.registerTouchArea(controlMove);
 	}
 
 	private void createJetClone()
