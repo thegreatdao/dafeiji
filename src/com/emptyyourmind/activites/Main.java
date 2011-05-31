@@ -6,6 +6,7 @@ import static com.emptyyourmind.utils.JetStrategyUtil.BG;
 import static com.emptyyourmind.utils.JetStrategyUtil.CELL_SIDE_LENGTH;
 import static com.emptyyourmind.utils.JetStrategyUtil.FLAMES;
 import static com.emptyyourmind.utils.JetStrategyUtil.INIT_XY_SPRITE;
+import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_BASE;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_HUD;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_OBJECTS;
 import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_HORIZONTAL_CELLS;
@@ -238,7 +239,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		scene.setOnSceneTouchListener(this);
 		
 		final Random random = new Random();
-		drawGrid(scene);
 		createDistortedStars(random, false);
 		createDistortedStars(random, true);
 		jet = new Jet(240, 180, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
@@ -251,6 +251,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		createControls();
 		creatHUDLayer();
 		createObjectsLayer();
+		createBaseLayer(scene);
 		
 		scene.setOnSceneTouchListener(this);
 		scene.registerUpdateHandler(
@@ -333,8 +334,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private void createObjectsLayer()
 	{
 		IEntity objectsLayer = scene.getChild(LAYER_OBJECTS);
-		objectsLayer.attachChild(animatedSpriteBuddha);
-		objectsLayer.attachChild(animatedSpriteSkull);
 		objectsLayer.attachChild(jet);
 		objectsLayer.attachChild(jetClone);
 		objectsLayer.attachChild(controlRotate);
@@ -475,12 +474,14 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		layer.attachChild(rect);
 	}
 	
-	private IEntity drawGrid(final Scene scene)
+	private IEntity createBaseLayer(final Scene scene)
 	{
+		final IEntity baseLayer = scene.getChild(LAYER_BASE);
+		baseLayer.attachChild(animatedSpriteBuddha);
+		baseLayer.attachChild(animatedSpriteSkull);
 		final float num_of_vertical_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		final float num_of_horizontal_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		
-		final IEntity gridLayer = scene.getFirstChild();
 		for (int i = 0; i < num_of_vertical_lines; i++)
 		{
 			final float x1 = i * CELL_SIDE_LENGTH;
@@ -488,15 +489,9 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			final float y1 = 0;
 			final float y2 = JetStrategyUtil.CAMERA_WIDTH;
 
-			/*final Line lineLightLeft = new Line(x1-1, y1, x2-1, y2, 1);
-			lineLightLeft.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
 			final Line mainLine = new Line(x1, y1, x2, y2, 1);
 			mainLine.setColor(0.8f, 0.8f, 0.8f, 0.6f);
-			/*final Line lineLightRight = new Line(x1+1, y1, x2+1, y2, 1);
-			lineLightRight.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
-//			gridLayer.attachChild(lineLightLeft);
-			gridLayer.attachChild(mainLine);
-//			gridLayer.attachChild(lineLightRight);
+			baseLayer.attachChild(mainLine);
 		}
 		
 		for (int i = 0; i < num_of_horizontal_lines; i++)
@@ -506,17 +501,11 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			final float y1 = i * CELL_SIDE_LENGTH;
 			final float y2 = y1;
 			
-		/*	final Line lineLightTop = new Line(x1, y1-1, x2, y2-1, 1);
-			lineLightTop.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
 			final Line mainLine = new Line(x1, y1, x2, y2, 1);
 			mainLine.setColor(0.8f, 0.8f, 0.8f, 0.6f);
-	/*		final Line lineLightBottom = new Line(x1, y1+1, x2, y2+1, 1);
-			lineLightBottom.setColor(0.2f, 0.4f, 0.4f, 0.2f);*/
-//			gridLayer.attachChild(lineLightTop);
-			gridLayer.attachChild(mainLine);
-//			gridLayer.attachChild(lineLightBottom);
+			baseLayer.attachChild(mainLine);
 		}
-		return gridLayer;
+		return baseLayer;
 	}
 
 }

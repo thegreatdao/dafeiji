@@ -36,9 +36,10 @@ public class JetStrategyUtil
 	public static final int NUM_OF_VERTICAL_CELLS = JetStrategyUtil.CAMERA_HEIGHT / CELL_SIDE_LENGTH;
 	public static final int TIME_INTERVAL_TO_UPDATE_BG = 10;
 	public static final int INIT_XY_SPRITE = -600;
-	public static final int NUM_OF_LAYERS = 2;
-	public static final int LAYER_OBJECTS = 0;
-	public static final int LAYER_HUD = 1;
+	public static final int NUM_OF_LAYERS = 3;
+	public static final int LAYER_BASE = 0;
+	public static final int LAYER_OBJECTS = 1;
+	public static final int LAYER_HUD = 2;
 	public static final int CAMERA_WIDTH = 720;
 	public static final int CAMERA_HEIGHT = 480;
 	
