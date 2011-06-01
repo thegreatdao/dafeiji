@@ -13,7 +13,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activites.Main" android:label="@string/app_name" />
+        <activity android:name=".activites.MainBaseAbstractActivity" android:label="@string/app_name" />
+        <activity android:name=".activites.BuddhaSceneActivity" android:label="@string/app_name" />
         <activity android:name=".activites.MainScreen" android:label="@string/app_name" />
     </application>
 </manifest>

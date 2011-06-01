@@ -2,7 +2,6 @@ package com.emptyyourmind.activites;
 
 import static com.emptyyourmind.utils.JetStrategyUtil.ALPHA_CLONE_END;
 import static com.emptyyourmind.utils.JetStrategyUtil.ALPHA_JET_CLONE;
-import static com.emptyyourmind.utils.JetStrategyUtil.BG;
 import static com.emptyyourmind.utils.JetStrategyUtil.CELL_SIDE_LENGTH;
 import static com.emptyyourmind.utils.JetStrategyUtil.FLAMES;
 import static com.emptyyourmind.utils.JetStrategyUtil.INIT_XY_SPRITE;
@@ -13,7 +12,6 @@ import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_HORIZONTAL_CELLS;
 import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_LAYERS;
 import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_VERTICAL_CELLS;
 import static com.emptyyourmind.utils.JetStrategyUtil.SECOND_PER_FRAME_FLAME;
-import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_BUDDHA;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_DISTORTED_STAR;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_HUD_HEALTH_BAR;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_HUD_HEALTH_BAR_BORDER;
@@ -83,35 +81,27 @@ import com.emptyyourmind.utils.JetStrategyUtil;
  * @author Self-Less
  *
  */
-@SuppressWarnings("unused")
-public class Main extends BaseGameActivity implements IOnSceneTouchListener
+public abstract class MainBaseAbstractActivity extends BaseGameActivity implements IOnSceneTouchListener
 {
-
 	private Camera camera;
+	protected Texture textureAutoParallaxBackground;
+	protected Texture textureSceneSpecificObject;
+	protected TextureRegion textureRegionBackground;
+	protected TiledTextureRegion animatedTextureRegionSceneSpecificObject;
 	private Texture textureMain;
-	private Texture textureAutoParallaxBackgroundSmallCloud;
-	private Texture textureAutoParallaxBackground;
-	private Texture textureAutoParallaxBackgroundBigCloud;
 	private Texture textureFlame;
 	private Texture textureVS;
 	private Texture textureJetThumb;
 	private Texture textureControlRotate;
 	private Texture textureControlMove;
 	private Texture texturePlayerIcons;
-	private Texture fontTexture;
+	private Texture textureFont;
 	private Texture textureDecorations;
-	private Texture textureBuddha;
 	private Texture textureSkull;
 	private TextureRegion textureRegionJet;
 	private TextureRegion textureRegionJetClone;
-	private TextureRegion textureRegionParallaxLayerBackLayer;
-	private TextureRegion textureRegionParallaxLayerMiddleLayer;
-	private TextureRegion textureRegionParallaxLayerFrontLayer;
-	private TextureRegion textureRegionParallaxLayerBackEnemy;
-	private TextureRegion textureRegionParallaxLayerMiddleEnemy;
 	private TextureRegion textureRegionHealthBarBorder;
 	private TextureRegion textureRegionVS;
-	private TextureRegion textureRegionJetThumb;
 	private TextureRegion textureRegionPlayerOneIcon;
 	private TextureRegion textureRegionPlayerTwoIcon;
 	private TextureRegion textureRegionStar;
@@ -119,7 +109,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private TiledTextureRegion textureRegionRotate;
 	private TiledTextureRegion textureRegionMove;
 	private TiledTextureRegion animatedTextureRegionFlame;
-	private TiledTextureRegion animatedTextureRegionBuddha;
 	private TiledTextureRegion animatedTextureRegionSkull;
 	private Scene scene;
 	private List<ControlIcon> controlIcons = new ArrayList<ControlIcon>(2);
@@ -140,7 +129,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private Sprite spriteHealthBar2;
 	private Sprite spriteHealthBarBorder2;
 	private Sprite spriteHealthBarBorder;
-	private AnimatedSprite animatedSpriteBuddha;
 	private AnimatedSprite animatedSpriteSkull;
 	private Jet jet;
 	private Jet jetClone;
@@ -175,12 +163,10 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureJetThumb = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureDecorations = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureRegionPlayerTwoIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, SPRITE_PLAYER_TWO, 91, 0);
-		textureAutoParallaxBackgroundSmallCloud = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
-		textureAutoParallaxBackgroundBigCloud = new Texture(512, 128, TextureOptions.DEFAULT);
 		textureControlMove = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureControlRotate = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		textureBuddha = new Texture(1024, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		
 		textureSkull = new Texture(512, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		animatedTextureRegionFlame = TextureRegionFactory.createTiledFromAsset(textureFlame, this, FLAMES[new Random().nextInt(FLAMES.length)], 0, 0, 4, 1);
 		textureRegionJet = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_JET, 0, 0);
@@ -192,20 +178,12 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, SPRITE_HUD_VS, 0, 0);
 		textureRegionPlayerOneIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, SPRTE_PLAYER_ONE, 0, 0);
 		textureRegionStar = TextureRegionFactory.createFromAsset(textureDecorations, this, SPRITE_DISTORTED_STAR, 0, 0);
-		animatedTextureRegionBuddha = TextureRegionFactory.createTiledFromAsset(textureBuddha, this, SPRITE_BUDDHA, 0, 0, 6, 1);
 		animatedTextureRegionSkull = TextureRegionFactory.createTiledFromAsset(textureSkull, this, SPRITE_SKULL, 0, 0, 5, 1);
 		
-		textureRegionParallaxLayerBackLayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackground, this, BG[new Random().nextInt(BG.length)], 0, 0);
-		textureRegionParallaxLayerMiddleLayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackgroundSmallCloud, this, "cloud.png", 0, 0);
-		textureRegionParallaxLayerFrontLayer = TextureRegionFactory.createFromAsset(textureAutoParallaxBackgroundBigCloud, this, "cloud2.png", 0, 0);
-		
-		textureRegionParallaxLayerBackEnemy = textureRegionParallaxLayerBackLayer.clone();
-		textureRegionParallaxLayerMiddleEnemy = textureRegionParallaxLayerMiddleLayer.clone();
-		
-		mEngine.getTextureManager().loadTextures(textureMain, textureAutoParallaxBackgroundSmallCloud, 
-				textureAutoParallaxBackground, textureAutoParallaxBackgroundBigCloud, 
+		mEngine.getTextureManager().loadTextures(textureMain, 
+				textureAutoParallaxBackground, 
 				textureFlame, textureVS, textureJetThumb, texturePlayerIcons, textureDecorations,
-				textureControlMove, textureControlRotate, textureBuddha, textureSkull);
+				textureControlMove, textureControlRotate, textureSkull);
 		try {
 			musicBackground= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "game.mp3");
 			soundClick= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
@@ -218,24 +196,18 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 			Debug.e("Error", e);
 		}
 		
-		fontTexture = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureFont = new Texture(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 
-		font = new StrokeFont(fontTexture, Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL), 18, true, Color.BLACK, 2, Color.WHITE, false);
+		font = new StrokeFont(textureFont, Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL), 18, true, Color.BLACK, 2, Color.WHITE, false);
 
-		this.mEngine.getTextureManager().loadTexture(fontTexture);
+		this.mEngine.getTextureManager().loadTexture(textureFont);
 		this.mEngine.getFontManager().loadFont(font);
 	}
 
 	@Override
 	public Scene onLoadScene()
 	{
-		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, JetStrategyUtil.CAMERA_HEIGHT - textureRegionParallaxLayerBackLayer.getHeight(), textureRegionParallaxLayerBackLayer)));
-		/*autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(3.0f, new Sprite(0,  JetStrategyUtil.CAMERA_HEIGHT / 2, textureRegionParallaxLayerMiddleLayer)));
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(1.0f, new Sprite(0,  JetStrategyUtil.CAMERA_HEIGHT / 4, textureRegionParallaxLayerFrontLayer)));*/
-		
 		scene = new Scene(NUM_OF_LAYERS);
-		scene.setBackground(autoParallaxBackgroundPlayer);
 		scene.setOnSceneTouchListener(this);
 		
 		final Random random = new Random();
@@ -243,8 +215,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		createDistortedStars(random, true);
 		jet = new Jet(240, 180, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jet.attachChild(new AnimatedSprite(120, 231, animatedTextureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
-		animatedSpriteBuddha = new AnimatedSprite(0, 0, animatedTextureRegionBuddha);
-		animatedSpriteBuddha.animate(new long[]{5000L, 6000L, 7000L, 8000L, 9000L, 8000L}, true);
+		
 		animatedSpriteSkull = new AnimatedSprite(390, 140, animatedTextureRegionSkull);
 		animatedSpriteSkull.animate(new long[]{6000L, 7000L, 8000L, 9000L, 8000L}, true);
 		createJetClone();
@@ -260,22 +231,24 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 				@Override
 				public void onTimePassed(final TimerHandler pTimerHandler)
 				{
-					Main.this.text.setText("Time: " + (int)Main.this.mEngine.getSecondsElapsedTotal());
+					MainBaseAbstractActivity.this.text.setText("Time: " + (int)MainBaseAbstractActivity.this.mEngine.getSecondsElapsedTotal());
 					long now = System.currentTimeMillis();
-					if(now - Main.this.startTimeLong >= 25000)
+					if(now - MainBaseAbstractActivity.this.startTimeLong >= 25000)
 					{
-						Main.this.startTimeLong = now;
+						MainBaseAbstractActivity.this.startTimeLong = now;
 						showStar(true, random);
 					}
-					if(now - Main.this.startTimeShort >= 15000)
+					if(now - MainBaseAbstractActivity.this.startTimeShort >= 15000)
 					{
-						Main.this.startTimeShort = now;
+						MainBaseAbstractActivity.this.startTimeShort = now;
 						showStar(false, random);
 					}
 				}
 			})
 		);
-		
+		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, JetStrategyUtil.CAMERA_HEIGHT - textureRegionBackground.getHeight(), textureRegionBackground)));
+		scene.setBackground(autoParallaxBackgroundPlayer);
 		return scene;
 	}
 
@@ -360,7 +333,6 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private void creatHUDLayer()
 	{
 		IEntity hudLayer = scene.getChild(LAYER_HUD);
-//		hudLayer.registerEntityModifier(new MoveModifier(1f, 0, 0, 100, 300));
 		spriteHealthBarBorder = new Sprite(60, 30, textureRegionHealthBarBorder);
 		spriteHealthBar = new Sprite(4, 5, textureRegionHealthBar);
 		spriteHealthBarBorder.attachChild(spriteHealthBar);
@@ -458,14 +430,7 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		jetClone.registerEntityModifier(new LoopEntityModifier(sequenceEntityModifier));
 	}
 
-	private void switchToEnemyBackground(Scene scene)
-	{
-		final AutoParallaxBackground autoParallaxBackgroundEnemy = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, JetStrategyUtil.CAMERA_HEIGHT - textureRegionParallaxLayerBackEnemy.getHeight(), textureRegionParallaxLayerBackEnemy)));
-		autoParallaxBackgroundEnemy.attachParallaxEntity(new ParallaxEntity(-5.0f, new Sprite(0,  JetStrategyUtil.CAMERA_HEIGHT / 2, textureRegionParallaxLayerMiddleEnemy)));
-		scene.setBackground(autoParallaxBackgroundEnemy);
-	}
-	
+	@SuppressWarnings("unused")
 	private void setMissleTarget(float x, float y, IEntity layer)
 	{
 		int[] cellCoordinates = JetStrategyUtil.findTargetCellCoordinates(x, y, NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
@@ -477,11 +442,9 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 	private IEntity createBaseLayer(final Scene scene)
 	{
 		final IEntity baseLayer = scene.getChild(LAYER_BASE);
-		baseLayer.attachChild(animatedSpriteBuddha);
-		baseLayer.attachChild(animatedSpriteSkull);
+		baseLayer.attachChild(getAnimatedSprite());
 		final float num_of_vertical_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		final float num_of_horizontal_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
-		
 		for (int i = 0; i < num_of_vertical_lines; i++)
 		{
 			final float x1 = i * CELL_SIDE_LENGTH;
@@ -508,4 +471,5 @@ public class Main extends BaseGameActivity implements IOnSceneTouchListener
 		return baseLayer;
 	}
 
+	protected abstract IEntity getAnimatedSprite();
 }

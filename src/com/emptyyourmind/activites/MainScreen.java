@@ -200,7 +200,7 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 			if(currentButton == buttonNewGame)
 			{
 				bGMusic.pause();
-				startActivity(new Intent(this, Main.class));
+				startActivity(new Intent(this, BuddhaSceneActivity.class));
 			}
 			currentButton.setCurrentTileIndex(0, 0);
 		}
