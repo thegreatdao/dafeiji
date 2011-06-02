@@ -4,24 +4,30 @@ import static com.emptyyourmind.utils.JetStrategyUtil.ALPHA_CLONE_END;
 import static com.emptyyourmind.utils.JetStrategyUtil.ALPHA_JET_CLONE;
 import static com.emptyyourmind.utils.JetStrategyUtil.CELL_SIDE_LENGTH;
 import static com.emptyyourmind.utils.JetStrategyUtil.FLAMES;
-import static com.emptyyourmind.utils.JetStrategyUtil.INIT_XY_SPRITE;
+import static com.emptyyourmind.utils.JetStrategyUtil.INIT_MENU_ITEM_POSITION_Y;
+import static com.emptyyourmind.utils.JetStrategyUtil.INIT_POSITION_X_AND_Y_FOR_JETS;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_BASE;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_HUD;
+import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_MAIN_MENU;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_OBJECTS;
 import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_HORIZONTAL_CELLS;
 import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_LAYERS;
 import static com.emptyyourmind.utils.JetStrategyUtil.NUM_OF_VERTICAL_CELLS;
 import static com.emptyyourmind.utils.JetStrategyUtil.SECOND_PER_FRAME_FLAME;
-import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_DISTORTED_STAR;
+import static com.emptyyourmind.utils.JetStrategyUtil.SPACING_MAIN_MENU_ITEM;
+import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_GRID_MENU_ITEM;
+import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_HEALTH_BAR_MENU_ITEM;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_HUD_HEALTH_BAR;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_HUD_HEALTH_BAR_BORDER;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_HUD_VS;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_JET;
+import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_MENU_ITEM_BASE;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_MOVE_ICON;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_PLAYER_TWO;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_ROTATE_ICON;
-import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_SKULL;
+import static com.emptyyourmind.utils.JetStrategyUtil.SPRITE_SUB_MENU_MENU_ITEM;
 import static com.emptyyourmind.utils.JetStrategyUtil.SPRTE_PLAYER_ONE;
+import static com.emptyyourmind.utils.JetStrategyUtil.WIDTH_OF_MAIN_MENU_ITEM;
 import static com.emptyyourmind.utils.JetStrategyUtil.Y_UPPER_BOUND;
 
 import java.io.IOException;
@@ -91,25 +97,30 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	private Texture textureMain;
 	private Texture textureFlame;
 	private Texture textureVS;
-	private Texture textureJetThumb;
 	private Texture textureControlRotate;
 	private Texture textureControlMove;
 	private Texture texturePlayerIcons;
 	private Texture textureFont;
-	private Texture textureDecorations;
-	private Texture textureSkull;
+	protected Texture textureRandomObject;
+	private Texture textureHealthBarMenuItem;
+	private Texture textureGridMenuItem;
+	private Texture textureSubmenuMenuItem;
+	private Texture textureMenu;
 	private TextureRegion textureRegionJet;
 	private TextureRegion textureRegionJetClone;
 	private TextureRegion textureRegionHealthBarBorder;
 	private TextureRegion textureRegionVS;
 	private TextureRegion textureRegionPlayerOneIcon;
 	private TextureRegion textureRegionPlayerTwoIcon;
-	private TextureRegion textureRegionStar;
+	protected TextureRegion textureRegionRandomObject;
 	private TextureRegion textureRegionHealthBar;
-	private TiledTextureRegion textureRegionRotate;
-	private TiledTextureRegion textureRegionMove;
+	private TextureRegion textureRegionMenu;
+	private TiledTextureRegion animatedTextureRegionRotate;
+	private TiledTextureRegion animatedTextureRegionMove;
 	private TiledTextureRegion animatedTextureRegionFlame;
-	private TiledTextureRegion animatedTextureRegionSkull;
+	private TiledTextureRegion animatedTextureRegionHealthBarMenuItem;
+	private TiledTextureRegion animatedTextureRegionGridMenuItem;
+	private TiledTextureRegion animatedTextureRegionSubMenuMenuItem;
 	private Scene scene;
 	private List<ControlIcon> controlIcons = new ArrayList<ControlIcon>(2);
 	private int[] target;
@@ -122,14 +133,13 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	private ChangeableText text;
 	private long startTimeLong = System.currentTimeMillis();
 	private long startTimeShort = System.currentTimeMillis();
-	private final List<Sprite> STARS_IN_SHORT_TIME_INTERVAL = new ArrayList<Sprite>();  
-	private final List<Sprite> STARS_IN_LONG_TIME_INTERVAL = new ArrayList<Sprite>(); 
+	private final List<Sprite> OBJECTS_IN_SHORT_TIME_INTERVAL = new ArrayList<Sprite>();  
+	private final List<Sprite> OBJECTS_IN_LONG_TIME_INTERVAL = new ArrayList<Sprite>(); 
 	private int menuOptionClickedTime;
 	private Sprite spriteHealthBar;
 	private Sprite spriteHealthBar2;
 	private Sprite spriteHealthBarBorder2;
 	private Sprite spriteHealthBarBorder;
-	private AnimatedSprite animatedSpriteSkull;
 	private Jet jet;
 	private Jet jetClone;
 	private ControlIcon controlRotate;
@@ -139,7 +149,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	public void onLoadComplete()
 	{
 	}
-
+	
 	@Override
 	public Engine onLoadEngine()
 	{
@@ -160,30 +170,34 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		textureMain = new Texture(1024, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureFlame = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureVS = new Texture(128, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		textureJetThumb = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		textureDecorations = new Texture(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureRegionPlayerTwoIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, SPRITE_PLAYER_TWO, 91, 0);
 		textureAutoParallaxBackground = new Texture(1024, 512, TextureOptions.DEFAULT);
 		textureControlMove = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		textureControlRotate = new Texture(256, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureMenu = new Texture(128, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureHealthBarMenuItem = new Texture(512, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureGridMenuItem = new Texture(512, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		textureSubmenuMenuItem = new Texture(512, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		
-		textureSkull = new Texture(512, 128, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		animatedTextureRegionFlame = TextureRegionFactory.createTiledFromAsset(textureFlame, this, FLAMES[new Random().nextInt(FLAMES.length)], 0, 0, 4, 1);
 		textureRegionJet = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_JET, 0, 0);
 		textureRegionJetClone = textureRegionJet.clone();
-		textureRegionRotate = TextureRegionFactory.createTiledFromAsset(textureControlRotate, this, SPRITE_ROTATE_ICON, 0, 0, 3, 1);
-		textureRegionMove = TextureRegionFactory.createTiledFromAsset(textureControlMove, this, SPRITE_MOVE_ICON, 0, 0, 3, 1);
 		textureRegionHealthBarBorder = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_HUD_HEALTH_BAR_BORDER, 421, 0);
 		textureRegionHealthBar = TextureRegionFactory.createFromAsset(textureMain, this, SPRITE_HUD_HEALTH_BAR, 661, 0);
 		textureRegionVS = TextureRegionFactory.createFromAsset(textureVS, this, SPRITE_HUD_VS, 0, 0);
 		textureRegionPlayerOneIcon = TextureRegionFactory.createFromAsset(texturePlayerIcons, this, SPRTE_PLAYER_ONE, 0, 0);
-		textureRegionStar = TextureRegionFactory.createFromAsset(textureDecorations, this, SPRITE_DISTORTED_STAR, 0, 0);
-		animatedTextureRegionSkull = TextureRegionFactory.createTiledFromAsset(textureSkull, this, SPRITE_SKULL, 0, 0, 5, 1);
+		textureRegionMenu = TextureRegionFactory.createFromAsset(textureMenu, this, SPRITE_MENU_ITEM_BASE, 0, 0);
+		animatedTextureRegionFlame = TextureRegionFactory.createTiledFromAsset(textureFlame, this, FLAMES[new Random().nextInt(FLAMES.length)], 0, 0, 4, 1);
+		animatedTextureRegionRotate = TextureRegionFactory.createTiledFromAsset(textureControlRotate, this, SPRITE_ROTATE_ICON, 0, 0, 3, 1);
+		animatedTextureRegionMove = TextureRegionFactory.createTiledFromAsset(textureControlMove, this, SPRITE_MOVE_ICON, 0, 0, 3, 1);
+		animatedTextureRegionHealthBarMenuItem = TextureRegionFactory.createTiledFromAsset(textureHealthBarMenuItem, this, SPRITE_HEALTH_BAR_MENU_ITEM, 0, 0, 2, 1);
+		animatedTextureRegionGridMenuItem = TextureRegionFactory.createTiledFromAsset(textureGridMenuItem, this, SPRITE_GRID_MENU_ITEM, 0, 0, 2, 1);
+		animatedTextureRegionSubMenuMenuItem = TextureRegionFactory.createTiledFromAsset(textureSubmenuMenuItem, this, SPRITE_SUB_MENU_MENU_ITEM, 0, 0, 2, 1);
 		
 		mEngine.getTextureManager().loadTextures(textureMain, 
 				textureAutoParallaxBackground, 
-				textureFlame, textureVS, textureJetThumb, texturePlayerIcons, textureDecorations,
-				textureControlMove, textureControlRotate, textureSkull);
+				textureFlame, textureVS, texturePlayerIcons,
+				textureControlMove, textureControlRotate, textureMenu, 
+				textureHealthBarMenuItem, textureGridMenuItem, textureSubmenuMenuItem);
 		try {
 			musicBackground= MusicFactory.createMusicFromAsset(mEngine.getMusicManager(), this, "game.mp3");
 			soundClick= SoundFactory.createSoundFromAsset(mEngine.getSoundManager(), this, "click.mp3");
@@ -211,18 +225,17 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		scene.setOnSceneTouchListener(this);
 		
 		final Random random = new Random();
-		createDistortedStars(random, false);
-		createDistortedStars(random, true);
+		createRandomObjects(random, false);
+		createRandomObjects(random, true);
 		jet = new Jet(240, 180, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jet.attachChild(new AnimatedSprite(120, 231, animatedTextureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
 		
-		animatedSpriteSkull = new AnimatedSprite(390, 140, animatedTextureRegionSkull);
-		animatedSpriteSkull.animate(new long[]{6000L, 7000L, 8000L, 9000L, 8000L}, true);
 		createJetClone();
 		createControls();
 		creatHUDLayer();
 		createObjectsLayer();
-		createBaseLayer(scene);
+		createBaseLayer();
+		createMenuItems();
 		
 		scene.setOnSceneTouchListener(this);
 		scene.registerUpdateHandler(
@@ -236,12 +249,12 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 					if(now - MainBaseAbstractActivity.this.startTimeLong >= 25000)
 					{
 						MainBaseAbstractActivity.this.startTimeLong = now;
-						showStar(true, random);
+						showObjects(true, random);
 					}
 					if(now - MainBaseAbstractActivity.this.startTimeShort >= 15000)
 					{
 						MainBaseAbstractActivity.this.startTimeShort = now;
-						showStar(false, random);
+						showObjects(false, random);
 					}
 				}
 			})
@@ -252,35 +265,60 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		return scene;
 	}
 
-	private void createDistortedStars(Random random, boolean starsWithLongTimeInterval)
+	private void createMenuItems()
 	{
-		List<Sprite> stars = STARS_IN_LONG_TIME_INTERVAL;
+		addMenuItems(3, WIDTH_OF_MAIN_MENU_ITEM, SPACING_MAIN_MENU_ITEM, JetStrategyUtil.CAMERA_WIDTH);
+	}
+	
+	private void addMenuItems(int numOfMenuItems, int widthOfItem, int spacing, int totalAvailableWidth)
+	{
+		int widthOfAllItems = widthOfItem * numOfMenuItems + (numOfMenuItems - 1) * spacing;
+		int halfWidthOfAllItems = widthOfAllItems / 2;
+		int startX = totalAvailableWidth / 2 - halfWidthOfAllItems;
+		AnimatedSprite menuItemHealthBar = new AnimatedSprite(0, 0, animatedTextureRegionHealthBarMenuItem);
+		menuItemHealthBar.animate(1000L);
+		AnimatedSprite menuItemGrid = new AnimatedSprite(0, 0, animatedTextureRegionGridMenuItem);
+		menuItemGrid.animate(1000L);
+		AnimatedSprite menuItemSubMenu = new AnimatedSprite(0, 0, animatedTextureRegionSubMenuMenuItem);
+		menuItemSubMenu.animate(1000L);
+		AnimatedSprite[] animatedMenuItems = new AnimatedSprite[]{menuItemHealthBar, menuItemGrid, menuItemSubMenu};
+		for(int i=0; i<numOfMenuItems; i++)
+		{
+			Sprite menuItemBase = new Sprite(startX + i * (widthOfItem + spacing), INIT_MENU_ITEM_POSITION_Y, i==0?textureRegionMenu:textureRegionMenu);
+			menuItemBase.attachChild(animatedMenuItems[i]);
+			scene.getChild(LAYER_MAIN_MENU).attachChild(menuItemBase);
+		}
+	}
+	
+	private void createRandomObjects(Random random, boolean starsWithLongTimeInterval)
+	{
+		List<Sprite> objects = OBJECTS_IN_LONG_TIME_INTERVAL;
 		if(!starsWithLongTimeInterval)
 		{
-			stars = STARS_IN_SHORT_TIME_INTERVAL;
+			objects = OBJECTS_IN_SHORT_TIME_INTERVAL;
 		}
 		for(int i=0; i < 60; i++)
 		{
 			int x = random.nextInt(JetStrategyUtil.CAMERA_WIDTH);
 			int y = random.nextInt(Y_UPPER_BOUND);
-			Sprite star = new Sprite(x, y, i==0?textureRegionStar:textureRegionStar.clone());
-			star.setVisible(false);
-			scene.getFirstChild().attachChild(star);
-			stars.add(star);
+			Sprite object = new Sprite(x, y, i==0?textureRegionRandomObject:textureRegionRandomObject.clone());
+			object.setVisible(false);
+			scene.getFirstChild().attachChild(object);
+			objects.add(object);
 		}
 	}
 
-	private void showStar(boolean starsWithLongTimeInterval, Random random)
+	private void showObjects(boolean starsWithLongTimeInterval, Random random)
 	{
-		List<Sprite> stars = STARS_IN_LONG_TIME_INTERVAL;
+		List<Sprite> objects = OBJECTS_IN_LONG_TIME_INTERVAL;
 		if(!starsWithLongTimeInterval)
 		{
-			stars = STARS_IN_SHORT_TIME_INTERVAL;
+			objects = OBJECTS_IN_SHORT_TIME_INTERVAL;
 		}
-		for(int i=0; i<stars.size(); i++)
+		for(int i=0; i<objects.size(); i++)
 		{
-			Sprite star = stars.get(i);
-			star.setVisible(true);
+			Sprite object = objects.get(i);
+			object.setVisible(true);
 			float startScale = random.nextFloat();
 			float startAlpha = random.nextFloat();
 			AlphaModifier alphaModifier = new AlphaModifier(2f, 0, startAlpha);
@@ -299,8 +337,8 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 				scaleModifier2 = new ScaleModifier(6f, startScale, 0);
 			}
 			ParallelEntityModifier secondParrallelEnitityModifier = new ParallelEntityModifier(alphaModifier2, scaleModifier2);
-			star.registerEntityModifier(new SequenceEntityModifier(firstparrallelEnitityModifier, secondParrallelEnitityModifier));
-			star.setPosition(random.nextInt(JetStrategyUtil.CAMERA_WIDTH), random.nextInt(Y_UPPER_BOUND));
+			object.registerEntityModifier(new SequenceEntityModifier(firstparrallelEnitityModifier, secondParrallelEnitityModifier));
+			object.setPosition(random.nextInt(JetStrategyUtil.CAMERA_WIDTH), random.nextInt(Y_UPPER_BOUND));
 		}
 	}
 	
@@ -317,15 +355,13 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
-		ScaleAtModifier scaleModifier = new ScaleAtModifier(1f, 1, 0.75f, 1, 1, 1, 1);
-		spriteHealthBar.registerEntityModifier(scaleModifier);
 		if(menuOptionClickedTime++ % 2 == 0 )
 		{
-			scene.getChild(LAYER_HUD).registerEntityModifier(new MoveModifier(2f, 0, 0, 0, -120));
+			scene.getChild(LAYER_MAIN_MENU).registerEntityModifier(new MoveModifier(1f, 0, 0, 0, -120));
 		}
 		else
 		{
-			scene.getChild(LAYER_HUD).registerEntityModifier(new MoveModifier(2f, 0, 0, -120, 0));
+			scene.getChild(LAYER_MAIN_MENU).registerEntityModifier(new MoveModifier(1f, 0, 0, -120, 0));
 		}
 		return false;
 	}
@@ -392,9 +428,9 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 
 	private void resetIconsAndReference()
 	{
-		controlRotate.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
-		controlMove.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
-		jetClone.setPosition(INIT_XY_SPRITE, INIT_XY_SPRITE);
+		controlRotate.setPosition(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS);
+		controlMove.setPosition(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS);
+		jetClone.setPosition(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS);
 		jetClone.reset();
 		jetClone.setAlpha(ALPHA_JET_CLONE);
 		rotationCount = 0;
@@ -410,9 +446,9 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 
 	private void createControls()
 	{
-		controlRotate = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionRotate, JetStrategyUtil.ACTION_ROTATE);
+		controlRotate = new ControlIcon(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, animatedTextureRegionRotate, JetStrategyUtil.ACTION_ROTATE);
 		controlRotate.animate(300L);
-		controlMove = new ControlIcon(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionMove, JetStrategyUtil.ACTION_MOVE);
+		controlMove = new ControlIcon(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, animatedTextureRegionMove, JetStrategyUtil.ACTION_MOVE);
 		controlMove.animate(300L);
 		controlIcons.add(controlRotate);
 		controlIcons.add(controlMove);
@@ -422,7 +458,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 
 	private void createJetClone()
 	{
-		jetClone = new Jet(INIT_XY_SPRITE, INIT_XY_SPRITE, textureRegionJetClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		jetClone = new Jet(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, textureRegionJetClone, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
 		jetClone.setAlpha(ALPHA_JET_CLONE);
 		ParallelEntityModifier parallelEntityModifier = new ParallelEntityModifier(new AlphaModifier(1f, ALPHA_JET_CLONE, ALPHA_CLONE_END), new ScaleModifier(1f, 1, 0.6f));
 		ParallelEntityModifier parallelEntityModifier2 = new ParallelEntityModifier(new AlphaModifier(1f, ALPHA_CLONE_END, ALPHA_JET_CLONE), new ScaleModifier(1f, 0.6f, 1));
@@ -439,10 +475,14 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		layer.attachChild(rect);
 	}
 	
-	private IEntity createBaseLayer(final Scene scene)
+	private IEntity createBaseLayer()
 	{
 		final IEntity baseLayer = scene.getChild(LAYER_BASE);
-		baseLayer.attachChild(getAnimatedSprite());
+		IEntity animatedSprite = getAnimatedSprite();
+		if(animatedSprite != null)
+		{
+			baseLayer.attachChild(animatedSprite);
+		}
 		final float num_of_vertical_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		final float num_of_horizontal_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
 		for (int i = 0; i < num_of_vertical_lines; i++)

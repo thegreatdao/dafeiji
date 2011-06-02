@@ -1,6 +1,7 @@
 package com.emptyyourmind.activites;
 
 import java.io.IOException;
+import java.util.Random;
 
 import org.anddev.andengine.audio.music.Music;
 import org.anddev.andengine.audio.music.MusicFactory;
@@ -200,7 +201,9 @@ public class MainScreen extends BaseGameActivity implements IOnAreaTouchListener
 			if(currentButton == buttonNewGame)
 			{
 				bGMusic.pause();
-				startActivity(new Intent(this, BuddhaSceneActivity.class));
+				Class<?>[] activites = new Class<?>[]{BuddhaSceneActivity.class, SkullSceneActivity.class, UFOSceneActivity.class};
+				Random random = new Random();
+				startActivity(new Intent(this, activites[random.nextInt(activites.length)]));
 			}
 			currentButton.setCurrentTileIndex(0, 0);
 		}
