@@ -57,7 +57,9 @@ import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
 import org.anddev.andengine.entity.primitive.Line;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
+import org.anddev.andengine.entity.scene.Scene.IOnAreaTouchListener;
 import org.anddev.andengine.entity.scene.Scene.IOnSceneTouchListener;
+import org.anddev.andengine.entity.scene.Scene.ITouchArea;
 import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
 import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxEntity;
 import org.anddev.andengine.entity.sprite.AnimatedSprite;
@@ -77,6 +79,7 @@ import org.anddev.andengine.util.Debug;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Menu;
+import android.widget.Toast;
 
 import com.emptyyourmind.enums.Direction;
 import com.emptyyourmind.sprites.ControlIcon;
@@ -87,7 +90,7 @@ import com.emptyyourmind.utils.JetStrategyUtil;
  * @author Self-Less
  *
  */
-public abstract class MainBaseAbstractActivity extends BaseGameActivity implements IOnSceneTouchListener
+public abstract class MainBaseAbstractActivity extends BaseGameActivity implements IOnSceneTouchListener, IOnAreaTouchListener
 {
 	private Camera camera;
 	protected Texture textureAutoParallaxBackground;
@@ -238,6 +241,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		createMenuItems();
 		
 		scene.setOnSceneTouchListener(this);
+		scene.setOnAreaTouchListener(this);
 		scene.registerUpdateHandler(
 			new TimerHandler(1 / 20.0f, true, new ITimerCallback()
 			{
@@ -276,11 +280,11 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		int halfWidthOfAllItems = widthOfAllItems / 2;
 		int startX = totalAvailableWidth / 2 - halfWidthOfAllItems;
 		AnimatedSprite menuItemHealthBar = new AnimatedSprite(0, 0, animatedTextureRegionHealthBarMenuItem);
-		menuItemHealthBar.animate(1000L);
+		scene.registerTouchArea(menuItemHealthBar);
 		AnimatedSprite menuItemGrid = new AnimatedSprite(0, 0, animatedTextureRegionGridMenuItem);
-		menuItemGrid.animate(1000L);
+		scene.registerTouchArea(menuItemGrid);
 		AnimatedSprite menuItemSubMenu = new AnimatedSprite(0, 0, animatedTextureRegionSubMenuMenuItem);
-		menuItemSubMenu.animate(1000L);
+		scene.registerTouchArea(menuItemSubMenu);
 		AnimatedSprite[] animatedMenuItems = new AnimatedSprite[]{menuItemHealthBar, menuItemGrid, menuItemSubMenu};
 		for(int i=0; i<numOfMenuItems; i++)
 		{
@@ -388,23 +392,32 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
-		ControlIcon controlIcon = JetStrategyUtil.getControlIcon(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH, controlIcons);
-		if(controlIcon == null)
-		{
-			target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
-			showControlIcons();
-		}
-		else
-		{
-			soundClick.play();
-			if(controlIcon.getName().equals(JetStrategyUtil.ACTION_MOVE))
+		return useControl(event);
+	}
+
+	private boolean useControl(TouchEvent event)
+	{
+		if(event.isActionDown()) 
+		{	
+			ControlIcon controlIcon = JetStrategyUtil.getControlIcon(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH, controlIcons);
+			if(controlIcon == null)
 			{
-				moveJet(target);
+				target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
+				showControlIcons();
 			}
 			else
 			{
-				rotateJetClone();
+				soundClick.play();
+				if(controlIcon.getName().equals(JetStrategyUtil.ACTION_MOVE))
+				{
+					moveJet(target);
+				}
+				else
+				{
+					rotateJetClone();
+				}
 			}
+			return true;
 		}
 		return false;
 	}
@@ -452,8 +465,6 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		controlMove.animate(300L);
 		controlIcons.add(controlRotate);
 		controlIcons.add(controlMove);
-		scene.registerTouchArea(controlRotate);
-		scene.registerTouchArea(controlMove);
 	}
 
 	private void createJetClone()
@@ -512,4 +523,20 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	}
 
 	protected abstract IEntity getAnimatedSprite();
+
+	@Override
+	public boolean onAreaTouched(TouchEvent pSceneTouchEvent, ITouchArea pTouchArea, float pTouchAreaLocalX, float pTouchAreaLocalY)
+	{
+		if(pSceneTouchEvent.isActionDown())
+		{
+			Toast.makeText(this, "SSSS", Toast.LENGTH_SHORT).show();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	
 }
