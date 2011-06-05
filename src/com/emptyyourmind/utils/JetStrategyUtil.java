@@ -2,7 +2,7 @@ package com.emptyyourmind.utils;
 
 import java.util.List;
 
-import com.emptyyourmind.sprites.ControlIcon;
+import org.anddev.andengine.entity.sprite.AnimatedSprite;
 
 public class JetStrategyUtil
 {
@@ -30,8 +30,6 @@ public class JetStrategyUtil
 	public static final String SPRITE_BG_BUDDHA_CITY = "buddha_city.png";
 	public static final String SPRITE_ROTATE_ICON = "rotate.png";
 	public static final String SPRITE_MOVE_ICON = "move.png";
-	public static final String ACTION_MOVE = "move";
-	public static final String ACTION_ROTATE = "rotate";
 	public static final String[] FLAMES = new String[]{SPRITE_FLAME_RED, SPRITE_FLAME_BLUE, SPRITE_FLAME_PURPLE};
 	public static final String[] BG = new String[]{SPRITE_BG_UFO_CITY, SPRITE_BG_SKULL_CITY, SPRITE_BG_BUDDHA_CITY};
 	public static final long SECOND_PER_FRAME_FLAME = 150L;
@@ -44,11 +42,12 @@ public class JetStrategyUtil
 	public static final int TIME_INTERVAL_TO_UPDATE_BG = 10;
 	public static final int INIT_POSITION_X_AND_Y_FOR_JETS = -600;
 	public static final int INIT_MENU_ITEM_POSITION_Y = 500;
-	public static final int NUM_OF_LAYERS = 4;
-	public static final int LAYER_BASE = 0;
-	public static final int LAYER_OBJECTS = 1;
-	public static final int LAYER_HUD = 2;
-	public static final int LAYER_MAIN_MENU = 3;
+	public static final int NUM_OF_LAYERS = 5;
+	public static final int LAYER_ANIMATED_SPRITES = 0;
+	public static final int LAYER_BASE = 1;
+	public static final int LAYER_OBJECTS = 2;
+	public static final int LAYER_HUD = 3;
+	public static final int LAYER_MAIN_MENU = 4;
 	public static final int CAMERA_WIDTH = 720;
 	public static final int CAMERA_HEIGHT = 480;
 	public static final int WIDTH_OF_MAIN_MENU_ITEM = 80;
@@ -83,13 +82,13 @@ public class JetStrategyUtil
 		return null;
 	}
 	
-	public static ControlIcon getControlIcon(float clickedX, float clickedY, int numOfHorCells, int numOfVerCells, int cellSideLength, List<ControlIcon> controlIcons)
+	public static AnimatedSprite getControlIcon(float clickedX, float clickedY, int numOfHorCells, int numOfVerCells, int cellSideLength, List<AnimatedSprite> controlIcons)
 	{
 		int[] targetCellCoordinates = findTargetCellCoordinates(clickedX, clickedY, numOfHorCells, numOfVerCells, cellSideLength);
 		int size = controlIcons.size();
 		for(int i=0; i<size; i++)
 		{
-			ControlIcon controlIcon = controlIcons.get(i);
+			AnimatedSprite controlIcon = controlIcons.get(i);
 			if(controlIcon.getX() == targetCellCoordinates[0] && controlIcon.getY() == targetCellCoordinates[1])
 			{
 				return controlIcon;

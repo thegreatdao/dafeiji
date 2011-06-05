@@ -2,10 +2,13 @@ package com.emptyyourmind.activites;
 
 import static com.emptyyourmind.utils.JetStrategyUtil.ALPHA_CLONE_END;
 import static com.emptyyourmind.utils.JetStrategyUtil.ALPHA_JET_CLONE;
+import static com.emptyyourmind.utils.JetStrategyUtil.CAMERA_HEIGHT;
+import static com.emptyyourmind.utils.JetStrategyUtil.CAMERA_WIDTH;
 import static com.emptyyourmind.utils.JetStrategyUtil.CELL_SIDE_LENGTH;
 import static com.emptyyourmind.utils.JetStrategyUtil.FLAMES;
 import static com.emptyyourmind.utils.JetStrategyUtil.INIT_MENU_ITEM_POSITION_Y;
 import static com.emptyyourmind.utils.JetStrategyUtil.INIT_POSITION_X_AND_Y_FOR_JETS;
+import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_ANIMATED_SPRITES;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_BASE;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_HUD;
 import static com.emptyyourmind.utils.JetStrategyUtil.LAYER_MAIN_MENU;
@@ -75,15 +78,15 @@ import org.anddev.andengine.opengl.texture.region.TextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TiledTextureRegion;
 import org.anddev.andengine.ui.activity.BaseGameActivity;
 import org.anddev.andengine.util.Debug;
+import org.anddev.andengine.util.modifier.ease.EaseStrongInOut;
 
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Menu;
-import android.widget.Toast;
 
 import com.emptyyourmind.enums.Direction;
-import com.emptyyourmind.sprites.ControlIcon;
 import com.emptyyourmind.sprites.Jet;
+import com.emptyyourmind.sprites.JetMainMenuItem;
 import com.emptyyourmind.utils.JetStrategyUtil;
 
 /**
@@ -125,7 +128,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	private TiledTextureRegion animatedTextureRegionGridMenuItem;
 	private TiledTextureRegion animatedTextureRegionSubMenuMenuItem;
 	private Scene scene;
-	private List<ControlIcon> controlIcons = new ArrayList<ControlIcon>(2);
+	private List<AnimatedSprite> controlIcons = new ArrayList<AnimatedSprite>(2);
 	private int[] target;
 	private int  rotationCount;	
 	private Direction direction = Direction.UP;
@@ -139,14 +142,16 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	private final List<Sprite> OBJECTS_IN_SHORT_TIME_INTERVAL = new ArrayList<Sprite>();  
 	private final List<Sprite> OBJECTS_IN_LONG_TIME_INTERVAL = new ArrayList<Sprite>(); 
 	private int menuOptionClickedTime;
+	private int healthBarControlClickedTime;
+	private int gridControlClickedTime;
 	private Sprite spriteHealthBar;
 	private Sprite spriteHealthBar2;
 	private Sprite spriteHealthBarBorder2;
 	private Sprite spriteHealthBarBorder;
 	private Jet jet;
 	private Jet jetClone;
-	private ControlIcon controlRotate;
-	private ControlIcon controlMove;
+	private AnimatedSprite controlRotate;
+	private AnimatedSprite controlMove;
 	
 	@Override
 	public void onLoadComplete()
@@ -156,9 +161,9 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	@Override
 	public Engine onLoadEngine()
 	{
-		camera = new Camera(0, 0, JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT);
+		camera = new Camera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
 		return new Engine(new EngineOptions(true, ScreenOrientation.LANDSCAPE, 
-				new RatioResolutionPolicy(JetStrategyUtil.CAMERA_WIDTH, JetStrategyUtil.CAMERA_HEIGHT), camera)
+				new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), camera)
 				.setNeedsSound(true).setNeedsMusic(true));
 	}
 
@@ -264,14 +269,14 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 			})
 		);
 		final AutoParallaxBackground autoParallaxBackgroundPlayer = new AutoParallaxBackground(0, 0, 0, 10);
-		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, JetStrategyUtil.CAMERA_HEIGHT - textureRegionBackground.getHeight(), textureRegionBackground)));
+		autoParallaxBackgroundPlayer.attachParallaxEntity(new ParallaxEntity(0.0f, new Sprite(0, CAMERA_HEIGHT - textureRegionBackground.getHeight(), textureRegionBackground)));
 		scene.setBackground(autoParallaxBackgroundPlayer);
 		return scene;
 	}
 
 	private void createMenuItems()
 	{
-		addMenuItems(3, WIDTH_OF_MAIN_MENU_ITEM, SPACING_MAIN_MENU_ITEM, JetStrategyUtil.CAMERA_WIDTH);
+		addMenuItems(3, WIDTH_OF_MAIN_MENU_ITEM, SPACING_MAIN_MENU_ITEM, CAMERA_WIDTH);
 	}
 	
 	private void addMenuItems(int numOfMenuItems, int widthOfItem, int spacing, int totalAvailableWidth)
@@ -279,11 +284,50 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		int widthOfAllItems = widthOfItem * numOfMenuItems + (numOfMenuItems - 1) * spacing;
 		int halfWidthOfAllItems = widthOfAllItems / 2;
 		int startX = totalAvailableWidth / 2 - halfWidthOfAllItems;
-		AnimatedSprite menuItemHealthBar = new AnimatedSprite(0, 0, animatedTextureRegionHealthBarMenuItem);
+		JetMainMenuItem menuItemHealthBar = new JetMainMenuItem(0, 0, animatedTextureRegionHealthBarMenuItem)
+		{
+			@Override
+			public void onAreaTouch()
+			{
+				super.onAreaTouch();
+				IEntity healthBar = scene.getChild(LAYER_HUD);
+				if(healthBarControlClickedTime++ % 2 == 0)
+				{
+					healthBar.registerEntityModifier(new MoveModifier(1f, 0, 0, 0, -120));
+				}
+				else
+				{
+					healthBar.registerEntityModifier(new MoveModifier(1f, 0, 0, -120, 0));
+				}
+			}
+		};
 		scene.registerTouchArea(menuItemHealthBar);
-		AnimatedSprite menuItemGrid = new AnimatedSprite(0, 0, animatedTextureRegionGridMenuItem);
+		JetMainMenuItem menuItemGrid = new JetMainMenuItem(0, 0, animatedTextureRegionGridMenuItem)
+		{
+			@Override
+			public void onAreaTouch()
+			{
+				super.onAreaTouch();
+				IEntity gridSystem = scene.getChild(LAYER_BASE);
+				if(gridControlClickedTime++ % 2 == 0)
+				{
+					gridSystem.registerEntityModifier(new MoveModifier(1f, 0, -CAMERA_WIDTH, 0, 0, EaseStrongInOut.getInstance()));
+				}
+				else
+				{
+					gridSystem.registerEntityModifier(new MoveModifier(1f, -CAMERA_WIDTH, 0, 0, 0, EaseStrongInOut.getInstance()));
+				}
+			}
+		};
 		scene.registerTouchArea(menuItemGrid);
-		AnimatedSprite menuItemSubMenu = new AnimatedSprite(0, 0, animatedTextureRegionSubMenuMenuItem);
+		JetMainMenuItem menuItemSubMenu = new JetMainMenuItem(0, 0, animatedTextureRegionSubMenuMenuItem)
+		{
+			@Override
+			public void onAreaTouch()
+			{
+				super.onAreaTouch();
+			}
+		};
 		scene.registerTouchArea(menuItemSubMenu);
 		AnimatedSprite[] animatedMenuItems = new AnimatedSprite[]{menuItemHealthBar, menuItemGrid, menuItemSubMenu};
 		for(int i=0; i<numOfMenuItems; i++)
@@ -303,7 +347,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		}
 		for(int i=0; i < 60; i++)
 		{
-			int x = random.nextInt(JetStrategyUtil.CAMERA_WIDTH);
+			int x = random.nextInt(CAMERA_WIDTH);
 			int y = random.nextInt(Y_UPPER_BOUND);
 			Sprite object = new Sprite(x, y, i==0?textureRegionRandomObject:textureRegionRandomObject.clone());
 			object.setVisible(false);
@@ -342,7 +386,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 			}
 			ParallelEntityModifier secondParrallelEnitityModifier = new ParallelEntityModifier(alphaModifier2, scaleModifier2);
 			object.registerEntityModifier(new SequenceEntityModifier(firstparrallelEnitityModifier, secondParrallelEnitityModifier));
-			object.setPosition(random.nextInt(JetStrategyUtil.CAMERA_WIDTH), random.nextInt(Y_UPPER_BOUND));
+			object.setPosition(random.nextInt(CAMERA_WIDTH), random.nextInt(Y_UPPER_BOUND));
 		}
 	}
 	
@@ -399,25 +443,13 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	{
 		if(event.isActionDown()) 
 		{	
-			ControlIcon controlIcon = JetStrategyUtil.getControlIcon(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH, controlIcons);
+			AnimatedSprite controlIcon = JetStrategyUtil.getControlIcon(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH, controlIcons);
 			if(controlIcon == null)
 			{
 				target = JetStrategyUtil.findTargetCellCoordinates(event.getX(), event.getY(), NUM_OF_HORIZONTAL_CELLS, NUM_OF_VERTICAL_CELLS, CELL_SIDE_LENGTH);
 				showControlIcons();
+				return true;
 			}
-			else
-			{
-				soundClick.play();
-				if(controlIcon.getName().equals(JetStrategyUtil.ACTION_MOVE))
-				{
-					moveJet(target);
-				}
-				else
-				{
-					rotateJetClone();
-				}
-			}
-			return true;
 		}
 		return false;
 	}
@@ -459,10 +491,12 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 
 	private void createControls()
 	{
-		controlRotate = new ControlIcon(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, animatedTextureRegionRotate, JetStrategyUtil.ACTION_ROTATE);
+		controlRotate = new AnimatedSprite(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, animatedTextureRegionRotate);
 		controlRotate.animate(300L);
-		controlMove = new ControlIcon(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, animatedTextureRegionMove, JetStrategyUtil.ACTION_MOVE);
+		scene.registerTouchArea(controlRotate);
+		controlMove = new AnimatedSprite(INIT_POSITION_X_AND_Y_FOR_JETS, INIT_POSITION_X_AND_Y_FOR_JETS, animatedTextureRegionMove);
 		controlMove.animate(300L);
+		scene.registerTouchArea(controlMove);
 		controlIcons.add(controlRotate);
 		controlIcons.add(controlMove);
 	}
@@ -492,16 +526,16 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		IEntity animatedSprite = getAnimatedSprite();
 		if(animatedSprite != null)
 		{
-			baseLayer.attachChild(animatedSprite);
+			scene.getChild(LAYER_ANIMATED_SPRITES).attachChild(animatedSprite);
 		}
-		final float num_of_vertical_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
-		final float num_of_horizontal_lines = JetStrategyUtil.CAMERA_WIDTH / CELL_SIDE_LENGTH;
+		final float num_of_vertical_lines = CAMERA_WIDTH / CELL_SIDE_LENGTH;
+		final float num_of_horizontal_lines = CAMERA_HEIGHT / CELL_SIDE_LENGTH;
 		for (int i = 0; i < num_of_vertical_lines; i++)
 		{
 			final float x1 = i * CELL_SIDE_LENGTH;
 			final float x2 = x1;
 			final float y1 = 0;
-			final float y2 = JetStrategyUtil.CAMERA_WIDTH;
+			final float y2 = CAMERA_HEIGHT;
 
 			final Line mainLine = new Line(x1, y1, x2, y2, 1);
 			mainLine.setColor(0.8f, 0.8f, 0.8f, 0.6f);
@@ -511,7 +545,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		for (int i = 0; i < num_of_horizontal_lines; i++)
 		{
 			final float x1 = 0;
-			final float x2 = JetStrategyUtil.CAMERA_WIDTH;
+			final float x2 = CAMERA_WIDTH;
 			final float y1 = i * CELL_SIDE_LENGTH;
 			final float y2 = y1;
 			
@@ -529,7 +563,19 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	{
 		if(pSceneTouchEvent.isActionDown())
 		{
-			Toast.makeText(this, "SSSS", Toast.LENGTH_SHORT).show();
+			soundClick.play();
+			if(pTouchArea == controlMove)
+			{
+				moveJet(target);
+			}
+			else if(pTouchArea == controlRotate)
+			{
+				rotateJetClone();
+			}
+			else
+			{
+				((JetMainMenuItem)pTouchArea).onAreaTouch();
+			}
 			return true;
 		}
 		else
