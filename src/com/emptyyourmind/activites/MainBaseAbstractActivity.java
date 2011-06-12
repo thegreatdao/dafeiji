@@ -95,6 +95,7 @@ import com.emptyyourmind.utils.JetStrategyUtil;
  */
 public abstract class MainBaseAbstractActivity extends BaseGameActivity implements IOnSceneTouchListener, IOnAreaTouchListener
 {
+	private static final float TIME_INTERVAL_FOR_ENTITY_MODIFIER = 2f;
 	private Camera camera;
 	protected Texture textureAutoParallaxBackground;
 	protected Texture textureSceneSpecificObject;
@@ -144,6 +145,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	private int menuOptionClickedTime;
 	private int healthBarControlClickedTime;
 	private int gridControlClickedTime;
+	private int sceneSwitchControlClickedTime;
 	private Sprite spriteHealthBar;
 	private Sprite spriteHealthBar2;
 	private Sprite spriteHealthBarBorder2;
@@ -152,6 +154,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	private Jet jetClone;
 	private AnimatedSprite controlRotate;
 	private AnimatedSprite controlMove;
+	private boolean enemyScene;
 	
 	@Override
 	public void onLoadComplete()
@@ -293,11 +296,11 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 				IEntity healthBar = scene.getChild(LAYER_HUD);
 				if(healthBarControlClickedTime++ % 2 == 0)
 				{
-					healthBar.registerEntityModifier(new MoveModifier(1f, 0, 0, 0, -120));
+					healthBar.registerEntityModifier(new MoveModifier(TIME_INTERVAL_FOR_ENTITY_MODIFIER, 0, 0, 0, -120));
 				}
 				else
 				{
-					healthBar.registerEntityModifier(new MoveModifier(1f, 0, 0, -120, 0));
+					healthBar.registerEntityModifier(new MoveModifier(TIME_INTERVAL_FOR_ENTITY_MODIFIER, 0, 0, -120, 0));
 				}
 			}
 		};
@@ -311,11 +314,11 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 				IEntity gridSystem = scene.getChild(LAYER_BASE);
 				if(gridControlClickedTime++ % 2 == 0)
 				{
-					gridSystem.registerEntityModifier(new MoveModifier(1f, 0, -CAMERA_WIDTH, 0, 0, EaseStrongInOut.getInstance()));
+					gridSystem.registerEntityModifier(new MoveModifier(TIME_INTERVAL_FOR_ENTITY_MODIFIER, 0, -CAMERA_WIDTH, 0, 0, EaseStrongInOut.getInstance()));
 				}
 				else
 				{
-					gridSystem.registerEntityModifier(new MoveModifier(1f, -CAMERA_WIDTH, 0, 0, 0, EaseStrongInOut.getInstance()));
+					gridSystem.registerEntityModifier(new MoveModifier(TIME_INTERVAL_FOR_ENTITY_MODIFIER, -CAMERA_WIDTH, 0, 0, 0, EaseStrongInOut.getInstance()));
 				}
 			}
 		};
@@ -326,6 +329,14 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 			public void onAreaTouch()
 			{
 				super.onAreaTouch();
+				if(sceneSwitchControlClickedTime++ % 2 == 0)
+				{
+					enemyScene = true;
+				}
+				else
+				{
+					enemyScene = false;
+				}
 			}
 		};
 		scene.registerTouchArea(menuItemSubMenu);
@@ -436,7 +447,17 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 	@Override
 	public boolean onSceneTouchEvent(Scene scene, TouchEvent event)
 	{
-		return useControl(event);
+		return enemyScene?attackEnemy(event):useControl(event);
+	}
+
+	private boolean attackEnemy(TouchEvent event)
+	{
+		if(event.isActionDown()) 
+		{	
+			
+			return true;
+		}
+		return false;
 	}
 
 	private boolean useControl(TouchEvent event)
@@ -578,11 +599,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 			}
 			return true;
 		}
-		else
-		{
-			return false;
-		}
+		return false;
 	}
-	
 	
 }
