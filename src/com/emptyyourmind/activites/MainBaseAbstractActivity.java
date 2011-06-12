@@ -83,6 +83,7 @@ import org.anddev.andengine.util.modifier.ease.EaseStrongInOut;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Menu;
+import android.widget.Toast;
 
 import com.emptyyourmind.enums.Direction;
 import com.emptyyourmind.sprites.Jet;
@@ -239,6 +240,7 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 		createRandomObjects(random, false);
 		createRandomObjects(random, true);
 		jet = new Jet(240, 180, textureRegionJet, Jet.JET54_REFERENCE_POINT_UP, CELL_SIDE_LENGTH);
+		scene.registerTouchArea(jet);
 		jet.attachChild(new AnimatedSprite(120, 231, animatedTextureRegionFlame).animate(SECOND_PER_FRAME_FLAME));
 		
 		createJetClone();
@@ -592,6 +594,10 @@ public abstract class MainBaseAbstractActivity extends BaseGameActivity implemen
 			else if(pTouchArea == controlRotate)
 			{
 				rotateJetClone();
+			}
+			else if(pTouchArea == jet)
+			{
+				Toast.makeText(this, jet.getX() + " : " + jet.getY(), Toast.LENGTH_SHORT).show();
 			}
 			else
 			{
